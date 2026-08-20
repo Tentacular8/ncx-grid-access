@@ -10,6 +10,7 @@ current model (open access from the corporate LAN, GlobalProtect for remote user
 |---|---|
 | [`NCX-Service-Gateway-Site-Access-Evaluation.md`](NCX-Service-Gateway-Site-Access-Evaluation.md) | Product evaluation — components, how NCX substitutes for a VPN, constraints and reasons it might not fit, SE questions, PoC plan. |
 | [`ncx-grid-access-design.html`](ncx-grid-access-design.html) | Reference design, five drawing sheets: topology, deployment options, site detail under a modem, resource/policy model, user access sequence, cutover. Open in a browser. |
+| [`diagrams.md`](diagrams.md) | The same five diagrams in Mermaid — renders inline on GitHub and in VS Code, for pasting into tickets, wikis, or slides. |
 
 ## Status
 
