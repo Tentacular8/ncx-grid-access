@@ -11,11 +11,13 @@
 | **Next review** | On receipt of the site inventory, or when the medium impact plan is defined, whichever comes first |
 | **Sources retrieved** | 2026-08-20, see Appendix C |
 
-**Revision history.** Rev A, first issue. Rev B, added Section 7 on containment and Section 9 on NERC CIP, corrected the regulatory framing from "distribution is out of scope" to the actual Distribution Provider applicability, and expanded Phase 0 of the proof of concept.
+**Revision history.** Rev A, first issue. Rev B, added Section 7 on containment and Section 9 on NERC CIP, corrected the regulatory framing from "distribution is out of scope" to the actual Distribution Provider applicability, expanded Phase 0 of the proof of concept, and moved the SE question list into its own working checklist.
 
 **Question being answered:** Can the NCX Service Gateway (Secure Connect plus ZTNA) replace the current model, which is open access to grid site gear from the corporate LAN and GlobalProtect/Palo Alto for everyone else, with a single identity-based private access path?
 
 **Short answer:** Yes, for the grid sites themselves, *provided* every site rides a Cradlepoint NCX-capable router and you actually decommission the existing routed path from the corporate network to the site subnets. NCX does not add privacy on top of a flat network. It replaces the transport, and the flat path has to go away for the security model to mean anything. It is not a general-purpose replacement for GlobalProtect for the rest of the enterprise, and there are real constraints (single-vendor edge, active/standby HA in one data center only, licensed-throughput hard caps, IPv4 unicast only) documented below.
+
+**Companion documents:** the reference design is `ncx-grid-access-design.html`, the portable diagrams are `diagrams.md`, and the vendor call checklist is `SE-questions-checklist.md`.
 
 **One thing it does not do at all:** NCX contains movement *between* sites and between the corporate network and a site. It does nothing about movement *inside* a site. If the requirement is blast radius containment after an endpoint at a site is compromised, read Section 7 before anything else, because that part is local segmentation work and no NCX licence changes it.
 
@@ -290,21 +292,28 @@ Two consequences worth stating plainly. First, the lack of switch access does no
 
 ## 11. Questions for the Ericsson and Cradlepoint SE
 
-1. Which exact router models in our fleet are Secure Connect and ZTNA capable, and what minimum NCOS does each need?
-2. Once a router is onboarded as an NCX site, does NCX also constrain local multi-LAN and zone firewall configuration, the way it already owns tunnels, DNS and routing? Our intra-site segmentation plan depends on the answer.
-3. Do destination wildcards apply to named resources, or only to FQDNs? If only FQDNs, how is a policy meant to scale past 20 destinations?
-4. Is BGP supported over the NCX overlay today, or is it static routing only? The docs conflict.
-5. Is there any supported path for geo-redundant Service Gateways, or is same-data-center active/standby the ceiling? What is the licensing impact of a second network for redundancy?
-6. What is the roadmap for clientless ZTNA on customer-hosted deployments?
-7. What exactly happens at the 10% throughput cliff: which traffic is dropped, is it signaled, and how is it alarmed in NCM?
-8. Can the 90-day ZTNA licence reservation be released early for terminated contractors?
-9. What are the supported syslog and SIEM export formats and destinations for ZTNA authentication and policy-hit logs, and what is the shortest path to 90 days of retained records?
-10. Is there any supported way to terminate a non-Cradlepoint IPsec peer on the Service Gateway for sites we cannot re-platform?
-11. What is the interoperability guidance for the NetCloud Client coexisting with GlobalProtect on the same Windows endpoint?
-12. Reference customers in electric distribution, specifically ones who removed the legacy L3 path rather than running NCX in parallel.
-13. For customers with NERC CIP obligations, what artifacts does Ericsson provide for a cloud-delivered deployment, and are there reference customers using the cloud-delivered model for anything categorized above low impact?
+The full list, with the reasoning behind each question and space to record answers, is in
+[`SE-questions-checklist.md`](SE-questions-checklist.md). That file is the working copy to
+take into the call. It is kept there rather than here so there is one list to maintain.
 
----
+Four of them decide the shape of this design rather than merely informing it, and they are
+worth pulling forward:
+
+1. **Which exact router models in our fleet are Secure Connect and ZTNA capable.** The share
+   of sites already on capable hardware decides NCX versus tightening Palo Alto, so this can
+   end the evaluation on its own.
+2. **Whether onboarding a router as an NCX site constrains local multi-LAN and zone firewall
+   configuration.** The containment plan in Section 7 puts the boundary on the router. If NCX
+   takes ownership of that configuration the way it already owns tunnels, DNS and routing,
+   tier 1 needs a different mechanism at every site.
+3. **Whether destination wildcards apply to named resources or only to FQDNs.** Policy scaling
+   depends entirely on the answer, and the 20 entry ceiling arrives quickly without it.
+4. **Whether clientless ZTNA is coming to customer-hosted deployments.** This is the Path C
+   decision, and Section 9.4 explains why medium impact sites push the hosting choice toward
+   customer-hosted, which today means no clientless portal.
+
+Everything else is operational or commercial and can be answered before the build rather
+than before the purchase.
 
 ## 12. Suggested proof of concept
 
