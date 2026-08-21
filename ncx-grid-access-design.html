@@ -1,3 +1,9 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Reference design for private, identity-based access to distribution grid sites using the Ericsson Cradlepoint NetCloud Exchange Service Gateway.">
 <title>NCX Grid Access Design</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -209,6 +215,8 @@
   .lg--fabric i{border-color:var(--fabric)}
   .lg--ctrl i{border-color:var(--ink-3);border-top-style:dashed;border-top-width:1.5px}
   .lg--dark i{border-color:var(--dark-asset);border-top-style:dashed}
+  .lg--cloud i{border-color:var(--fabric);border-top-style:dashed}
+  .lg--deny i{border-color:var(--deny)}
   .lg--ot i{border-color:var(--ot)}
   .sheet__title{
     border-top:1px solid var(--rule-strong);
@@ -339,6 +347,7 @@
   .note--warn{border-left-color:var(--deny)}
   .note--ot{border-left-color:var(--ot)}
   .note p{margin:0;font-size:15px;color:var(--ink-2)}
+  .note p + p{margin-top:10px}
   .note strong{color:var(--ink)}
   .note__label{
     font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
@@ -380,6 +389,7 @@
   .d-node--fabric{fill:var(--surface);stroke:var(--fabric);stroke-width:1.6}
   .d-node--ot{fill:var(--surface);stroke:var(--ot);stroke-width:1.4}
   .d-node--dark{fill:none;stroke:var(--dark-asset);stroke-width:1.1;stroke-dasharray:4 3}
+  .d-node--cloud{fill:none;stroke:var(--fabric);stroke-width:1.3;stroke-dasharray:5 3}
   .d-fill-fabric{fill:var(--fabric-soft);stroke:none}
   .d-hd{font-family:var(--display);font-size:12.5px;font-weight:600;fill:var(--ink);letter-spacing:.02em}
   .d-hd--f{fill:var(--fabric)}
@@ -387,6 +397,7 @@
   .d-s{font-family:var(--mono);font-size:9.8px;fill:var(--ink-3)}
   .d-zt{font-family:var(--mono);font-size:9.8px;fill:var(--ink-3);letter-spacing:.12em}
   .d-tunnel{stroke:var(--fabric);stroke-width:2.6;fill:none}
+  .d-tunnel--cond{stroke:var(--fabric);stroke-width:2;fill:none;stroke-dasharray:5 3}
   .d-thin{stroke:var(--rule-strong);stroke-width:1.2;fill:none}
   .d-ctrl{stroke:var(--ink-3);stroke-width:1.1;stroke-dasharray:5 4;fill:none;opacity:.85}
   .d-lifeline{stroke:var(--rule-strong);stroke-width:1;stroke-dasharray:3 5}
@@ -398,20 +409,42 @@
   @media (prefers-reduced-motion:no-preference){
     a{transition:color .15s ease}
   }
+
+  @media print{
+    :root{
+      --ground:#FFFFFF;--surface:#FFFFFF;--surface-2:#FFFFFF;
+      --ink:#000000;--ink-2:#222222;--ink-3:#444444;
+      --rule:#BBBBBB;--rule-strong:#888888;
+    }
+    @page{size:landscape;margin:12mm}
+    body{background:#FFFFFF}
+    .wrap{max-width:none;padding:0}
+    .toc{display:none}
+    section{break-inside:avoid-page}
+    .sheet{break-inside:avoid-page;page-break-inside:avoid}
+    h2{break-after:avoid-page}
+    table{break-inside:auto}
+    tr{break-inside:avoid-page}
+    a{color:inherit;text-decoration:none}
+    .sheet__title{border-top:1px solid #888}
+  }
 </style>
+</head>
+<body>
 
 <div class="wrap">
 
   <header class="mast">
     <p class="mast__eyebrow">Reference design · Ericsson Cradlepoint NetCloud Exchange</p>
     <h1>Private access to distribution grid sites</h1>
-    <p class="mast__sub">A worked example of how the NCX Service Gateway sits between the corporate network and the site modems — what runs under each modem, where NetCloud Manager fits, and exactly what happens when an engineer at a desk opens a substation HMI.</p>
+    <p class="mast__sub">A worked example of how the NCX Service Gateway sits between the corporate network and the site modems: what runs under each modem, where NetCloud Manager fits, and exactly what happens when an engineer at a desk opens a substation HMI.</p>
     <div class="mast__meta">
       <span><b>Drawing set</b> NCX-GRID-REF</span>
-      <span><b>Rev</b> A</span>
+      <span><b>Rev</b> B</span>
       <span><b>Sheets</b> 5</span>
       <span><b>Basis</b> NCX evaluation, 2026-08-20</span>
       <span><b>Status</b> Illustrative example</span>
+      <span><b>Classification</b> Internal</span>
     </div>
   </header>
 
@@ -419,6 +452,7 @@
     <p class="kicker">Contents</p>
     <ol>
       <li><a href="#scenario">The example network</a></li>
+      <li><a href="#containment">Containment, and what NCX does not do</a></li>
       <li><a href="#topology">System topology</a></li>
       <li><a href="#hosting">Where the gateway lives</a></li>
       <li><a href="#undermodem">Under the modem</a></li>
@@ -426,14 +460,31 @@
       <li><a href="#walkthrough">Desk to substation HMI</a></li>
       <li><a href="#cutover">The cutover that makes it real</a></li>
       <li><a href="#failure">When things break</a></li>
+      <li><a href="#cip">Where NERC CIP touches this</a></li>
     </ol>
   </nav>
+
+  <section id="control">
+    <div class="tablewrap">
+      <table>
+        <caption>Document control</caption>
+        <thead>
+          <tr><th style="width:10%">Rev</th><th style="width:16%">Date</th><th style="width:24%">Owner</th><th>Change</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="m">B</td><td class="m">2026-08-20</td><td>Network engineering</td><td>Added the containment section and the NERC CIP section. Redrew sheet 3 as three LAN zones. Corrected the site tag set, added the historian access rule, and marked the clientless portal rule as unavailable with the gateway drawn on sheet 1.</td></tr>
+          <tr><td class="m">A</td><td class="m">2026-08-20</td><td>Network engineering</td><td>First issue. Five sheets, resource and policy model, failure behavior.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose"><b>Reviewers still required:</b> OT security, compliance (impact classification and CIP applicability), and the team that owns the site switches. <b>Next review:</b> on receipt of the site inventory, or when the medium impact plan is defined, whichever comes first.</p>
+  </section>
 
   <!-- ============ 1 ============ -->
   <section id="scenario">
     <h2>The example network</h2>
     <div class="sec__rule"></div>
-    <p class="sec__lede prose">Three grid sites, one data center, one corporate office. The addressing is deliberately awkward in the way real distribution fleets are awkward: every site was built from the same template, so every site LAN is <code>192.168.1.0/24</code>.</p>
+    <p class="sec__lede prose">Three grid sites, one data center, one corporate office. The addressing is deliberately awkward in the way real distribution fleets are awkward: every site is built from the same template, so every site uses the same three subnets. Sites are internally split into zones so that a compromised device at one cannot reach everything else in the cabinet.</p>
 
     <div class="tablewrap">
       <table>
@@ -444,24 +495,122 @@
         <tbody>
           <tr><td>Corporate office</td><td class="m">10.20.0.0/16</td><td>Engineering and ops staff. Example laptop <span class="m">10.20.41.87</span>.</td></tr>
           <tr><td>Data center</td><td class="m">10.30.0.0/16</td><td>NCX Service Gateway, ADMS/SCADA master <span class="m">10.30.12.40</span>, historian <span class="m">10.30.12.55</span>.</td></tr>
-          <tr><td>SUB-042</td><td class="m">192.168.1.0/24</td><td>Substation. Cradlepoint E3000, dual 5G. Virtualization host with three VMs, RTU, two relays, camera.</td></tr>
-          <tr><td>RCL-118</td><td class="m">192.168.1.0/24</td><td>Pole-mounted recloser cabinet. Cradlepoint S700, single LTE. RTU only.</td></tr>
-          <tr><td>CREW-07</td><td class="m">192.168.1.0/24</td><td>Service truck. Cradlepoint R1900, dual 5G. Ruggedized laptop dock.</td></tr>
+          <tr><td>SUB-042</td><td class="m">192.168.10.0/24<br>192.168.20.0/24<br>192.168.30.0/24</td><td>Substation. Cradlepoint E3000, dual 5G. All three zones present: virtualization host with three VMs, RTU, two relays, camera, one unidentified spare.</td></tr>
+          <tr><td>RCL-118</td><td class="m">192.168.20.0/24</td><td>Pole-mounted recloser cabinet. Cradlepoint S700, single LTE. Control zone only, RTU alone in it.</td></tr>
+          <tr><td>CREW-07</td><td class="m">192.168.10.0/24</td><td>Service truck. Cradlepoint R1900, dual 5G. Ruggedized laptop dock. No OT control zone.</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="note">
       <span class="note__label">Why the overlap does not matter</span>
-      <p>Secure Connect addresses things by <strong>name, not IP</strong>. <span class="m">SUB042-RTU</span> and <span class="m">RCL118-RTU</span> can both be <span class="m">192.168.1.30</span> because nothing on the fabric ever refers to them by address. This is the single feature that saves you from renumbering hundreds of sites before you can build anything.</p>
+      <p>Secure Connect addresses things by <strong>name, not IP</strong>. <span class="m">SUB042-RTU</span> and <span class="m">RCL118-RTU</span> can both be <span class="m">192.168.20.30</span> because nothing on the fabric ever refers to them by address. This is the single feature that saves you from renumbering hundreds of sites before you can build anything, and it is what lets every site run an identical three-zone template.</p>
+    </div>
+
+    <div class="note note--ot">
+      <span class="note__label">The zone template</span>
+      <p><span class="m">192.168.10.0/24</span> is <span class="m">LAN-OT-APPS</span>, for site servers, VMs and protocol gateways. <span class="m">192.168.20.0/24</span> is <span class="m">LAN-OT-CTRL</span>, for protection and control gear that nothing but a defined application should ever open a session to. <span class="m">192.168.30.0/24</span> is <span class="m">LAN-AUX</span>, for cameras, environmental sensors, contractor drops and anything nobody can positively identify. A site carries only the zones it needs. Every zone is a separate router LAN on its own physical port, so this works with unmanaged switches and does not depend on getting access to a managed switch. See <a href="#containment">Containment</a>.</p>
     </div>
   </section>
 
+
   <!-- ============ 2 ============ -->
+  <section id="containment">
+    <h2>Containment, and what NCX does not do</h2>
+    <div class="sec__rule"></div>
+    <p class="sec__lede prose">The requirement behind this work is blast radius. If an endpoint at a site is compromised, it must not be able to reach the rest of that site, the other sites, or the corporate network. NCX answers three of those four. It does not answer the first one at all, and no amount of policy in NetCloud Manager will change that.</p>
+
+    <div class="tablewrap">
+      <table>
+        <caption>Four spread paths, and which mechanism stops each</caption>
+        <thead>
+          <tr><th style="width:30%">Spread path</th><th style="width:16%">Contained by NCX</th><th style="width:24%">Mechanism</th><th>What it depends on</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Site A device to Site B device</td>
+            <td><span class="pill pill--allow">Yes, by default</span></td>
+            <td>Secure Connect denies site to site until a policy allows it</td>
+            <td>Nothing. This is the shipped default and it is the strongest single thing NCX does for this requirement.</td>
+          </tr>
+          <tr>
+            <td>Site device into corporate or the data center</td>
+            <td><span class="pill pill--allow">Yes</span></td>
+            <td>Deny-all access policy, resources are one directional grants</td>
+            <td>Withdrawing the legacy corporate route. If the flat path survives, NCX is not in the way of it.</td>
+          </tr>
+          <tr>
+            <td>Corporate device into a site</td>
+            <td><span class="pill pill--allow">Yes</span></td>
+            <td>Undefined gear is not addressable and does not resolve</td>
+            <td>The same route withdrawal. See <a href="#cutover">the cutover sheet</a>.</td>
+          </tr>
+          <tr>
+            <td>Device to device <strong>inside one site</strong></td>
+            <td><span class="pill pill--deny">No. Nothing.</span></td>
+            <td>None. This traffic never leaves the site LAN and the gateway never sees it.</td>
+            <td>Local segmentation. Router LAN zones, physical separation, or VLANs if you have the switch.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="prose">That last row is why <a href="#undermodem">sheet 3</a> is drawn in zones rather than as one flat LAN. Before zoning, a camera at <span class="m">192.168.30.50</span> had an unfiltered layer 2 path to two protective relays. NCX made that camera dark to the outside world and did nothing whatsoever about the path to the relays.</p>
+
+    <h3>Four tiers, ordered so the switch dependency comes last</h3>
+    <p class="prose">Most of the containment value lands before anyone needs administrative access to a managed switch. That ordering matters when switch ownership sits with another team.</p>
+
+    <div class="tablewrap">
+      <table>
+        <caption>Containment tiers</caption>
+        <thead>
+          <tr><th style="width:6%">Tier</th><th style="width:28%">What</th><th style="width:24%">Needs</th><th>Closes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="m num">0</td>
+            <td>NCX deny-all between sites, plus withdraw the legacy corporate routes</td>
+            <td><span class="pill pill--allow">Nothing new</span></td>
+            <td>Cross-site spread, site to corporate, corporate to site. Three of the four paths above.</td>
+          </tr>
+          <tr>
+            <td class="m num">1</td>
+            <td>OT and non-OT on separate router LANs and physical ports, zone firewall default deny between them</td>
+            <td>Re-cabling and NCOS config. No switch administration.</td>
+            <td>The corporate-or-contractor device at a site pivoting onto control gear. The most likely real version of the threat.</td>
+          </tr>
+          <tr>
+            <td class="m num">2</td>
+            <td>Hypervisor: separate port groups per zone, no bridged path between the OT virtual network and anything else</td>
+            <td><span class="pill pill--allow">You already own this</span></td>
+            <td>VM to VM movement inside the virtualization host.</td>
+          </tr>
+          <tr>
+            <td class="m num">3</td>
+            <td>Per-function VLANs, port isolation for cameras and unidentified gear, ACLs between OT function groups</td>
+            <td>Administrative access to the site switches</td>
+            <td>Movement inside a single zone. The residue tiers 0 to 2 leave behind.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <span class="note__label">Why the router, not the switch, should be the boundary</span>
+      <p>Whatever device enforces the boundary becomes the thing an auditor asks about later, and it inherits the requirement load that comes with that role. If a managed switch enforces zone separation through VLANs, that switch is in scope. If the Cradlepoint is the single access point between zones and out to the fabric, the count stays at one box per site, on hardware already managed through NetCloud Manager. Tiers 0 to 2 above build that shape deliberately. Tier 3 then adds depth inside a zone without moving the boundary.</p>
+    </div>
+
+    <div class="note note--warn">
+      <span class="note__label">What zoning still does not fix</span>
+      <p>Devices sharing a zone reach each other at layer 2, and that traffic never reaches the router. Neither the zone firewall nor the Hybrid Mesh Firewall east-west inspection can see it, because inspection only applies to traffic that traverses the router. Contain by function group, then rely on host controls and physical access control inside a group until tier 3 is available. If a vendor presents east-west IDS or IPS as the answer to lateral movement inside a substation, that is the question to put to them.</p>
+    </div>
+  </section>
+
+  <!-- ============ 3 ============ -->
   <section id="topology">
     <h2>System topology</h2>
     <div class="sec__rule"></div>
-    <p class="sec__lede prose">Every site modem dials <em>outbound</em> to the Service Gateway. Nothing routes inbound, no site needs a static IP, and NetCloud Manager never carries user traffic — it only pushes configuration and policy.</p>
+    <p class="sec__lede prose">Every site modem dials <em>outbound</em> to the Service Gateway. Nothing routes inbound, no site needs a static IP, and NetCloud Manager never carries user traffic. It only pushes configuration and policy.</p>
 
     <figure class="sheet">
       <div class="sheet__canvas">
@@ -478,7 +627,7 @@
           <!-- management ring -->
           <path class="d-ctrl" d="M370,49 L25,49 L25,710 L1015,710 L1015,49 L670,49"/>
           <path class="d-ctrl" d="M185,710 L185,690 M520,710 L520,690 M855,710 L855,690 M25,300 L40,300"/>
-          <text class="d-zt" x="534" y="702" text-anchor="middle">NETCLOUD MANAGER CONTROL PLANE — HTTPS OUT FROM EVERY DEVICE, NO USER TRAFFIC</text>
+          <text class="d-zt" x="534" y="702" text-anchor="middle">NETCLOUD MANAGER CONTROL PLANE · HTTPS OUT FROM EVERY DEVICE, NO USER TRAFFIC</text>
 
           <!-- NCM -->
           <rect class="d-node--fabric" x="370" y="18" width="300" height="62" rx="4"/>
@@ -533,16 +682,17 @@
           <path class="d-thin" d="M620,382 L620,358" marker-end="url(#arwAg)"/>
 
           <!-- vendor -->
-          <rect class="d-zone" x="770" y="236" width="250" height="160"/>
+          <rect class="d-zone" x="770" y="236" width="250" height="176"/>
           <text class="d-zt" x="782" y="256">THIRD PARTY · UNMANAGED DEVICE</text>
           <rect class="d-node" x="788" y="268" width="214" height="64" rx="3"/>
           <text class="d-hd" x="800" y="290">Relay OEM engineer</text>
           <text class="d-s" x="800" y="307">browser only, no agent</text>
           <text class="d-s" x="800" y="323">never receives an IP here</text>
-          <rect class="d-node--dark" x="788" y="344" width="214" height="42" rx="3"/>
+          <rect class="d-node--cloud" x="788" y="344" width="214" height="58" rx="3"/>
           <text class="d-s" x="800" y="361">Clientless ZTNA portal</text>
           <text class="d-s" x="800" y="376">isolated cloud container</text>
-          <path class="d-tunnel" d="M786,362 L708,334" marker-end="url(#arwA)"/>
+          <text class="d-s" x="800" y="393">NOT AVAILABLE WITH THIS GATEWAY</text>
+          <path class="d-tunnel--cond" d="M786,368 L708,334" marker-end="url(#arwA)"/>
 
           <!-- tunnels down -->
           <path class="d-tunnel" d="M530,358 L530,472"/>
@@ -558,21 +708,21 @@
           <text class="d-hd" x="54" y="592">SUB-042 · SUBSTATION</text>
           <text class="d-t" x="54" y="611">Cradlepoint E3000 (modem)</text>
           <text class="d-s" x="54" y="629">WAN1 5G + WAN2 5G → 2 tunnels</text>
-          <text class="d-s" x="54" y="646">LAN 192.168.1.0/24</text>
+          <text class="d-s" x="54" y="646">3 LAN zones · .10 / .20 / .30</text>
           <text class="d-s" x="54" y="663">host + 3 VMs, RTU, 2 relays</text>
 
           <rect class="d-node--fabric" x="375" y="568" width="290" height="122" rx="4"/>
           <text class="d-hd" x="389" y="592">RCL-118 · RECLOSER</text>
           <text class="d-t" x="389" y="611">Cradlepoint S700 (modem)</text>
           <text class="d-s" x="389" y="629">WAN1 LTE → 1 tunnel</text>
-          <text class="d-s" x="389" y="646">LAN 192.168.1.0/24 — same subnet</text>
+          <text class="d-s" x="389" y="646">1 LAN zone · .20 · same subnet</text>
           <text class="d-s" x="389" y="663">RTU only</text>
 
           <rect class="d-node--fabric" x="710" y="568" width="290" height="122" rx="4"/>
           <text class="d-hd" x="724" y="592">CREW-07 · SERVICE TRUCK</text>
           <text class="d-t" x="724" y="611">Cradlepoint R1900 (modem)</text>
           <text class="d-s" x="724" y="629">WAN1 5G + WAN2 5G → 2 tunnels</text>
-          <text class="d-s" x="724" y="646">LAN 192.168.1.0/24</text>
+          <text class="d-s" x="724" y="646">1 LAN zone · .10</text>
           <text class="d-s" x="724" y="663">laptop dock, mobile</text>
         </svg>
       </div>
@@ -580,12 +730,12 @@
         <span class="lg lg--fabric"><i></i>encrypted fabric</span>
         <span class="lg lg--ctrl"><i></i>management / control plane</span>
         <span class="lg lg--ot"><i></i>OT application</span>
-        <span class="lg lg--dark"><i></i>cloud-delivered component</span>
+        <span class="lg lg--cloud"><i></i>cloud-delivered only, not in this drawing</span>
       </div>
       <div class="sheet__title">
         <span class="tb">DWG <b>NCX-GRID-REF</b></span>
         <span class="tb">TITLE <b>System topology</b></span>
-        <span class="tb">REV <b>A</b></span>
+        <span class="tb">REV <b>B</b></span>
         <span class="tb tb--grow">SHEET 1 OF 5</span>
       </div>
     </figure>
@@ -593,11 +743,11 @@
     <figcaption>The three lines leaving the gateway are the only paths into the grid sites. The dashed ring is NetCloud Manager: it reaches every device for configuration and telemetry, and carries none of the traffic in this document.</figcaption>
   </section>
 
-  <!-- ============ 3 ============ -->
+  <!-- ============ 4 ============ -->
   <section id="hosting">
     <h2>Where the gateway lives</h2>
     <div class="sec__rule"></div>
-    <p class="sec__lede prose">NetCloud Manager is always cloud — there is no on-premises NCM. The choice you actually make is where the <em>Service Gateway</em> runs, and it changes which features you get.</p>
+    <p class="sec__lede prose">NetCloud Manager is always cloud. There is no on-premises NCM. The choice you actually make is where the <em>Service Gateway</em> runs, and it changes which features you get.</p>
 
     <figure class="sheet">
       <div class="sheet__canvas">
@@ -610,7 +760,7 @@
 
           <!-- panel A -->
           <rect class="d-zone" x="16" y="10" width="492" height="336"/>
-          <text class="d-zt" x="32" y="32">OPTION A — CUSTOMER-HOSTED · "NETCLOUD EXCHANGE"</text>
+          <text class="d-zt" x="32" y="32">OPTION A · CUSTOMER-HOSTED · "NETCLOUD EXCHANGE"</text>
 
           <rect class="d-node" x="150" y="48" width="224" height="42" rx="3"/>
           <text class="d-t" x="262" y="74" text-anchor="middle">NetCloud Manager · cloud</text>
@@ -635,7 +785,7 @@
 
           <!-- panel B -->
           <rect class="d-zone" x="532" y="10" width="492" height="336"/>
-          <text class="d-zt" x="548" y="32">OPTION B — CLOUD-DELIVERED · "NETCLOUD SASE"</text>
+          <text class="d-zt" x="548" y="32">OPTION B · CLOUD-DELIVERED · "NETCLOUD SASE"</text>
 
           <rect class="d-zone" x="576" y="48" width="404" height="182"/>
           <text class="d-zt" x="590" y="68">ERICSSON CLOUD</text>
@@ -668,7 +818,7 @@
       <div class="sheet__title">
         <span class="tb">DWG <b>NCX-GRID-REF</b></span>
         <span class="tb">TITLE <b>Deployment options</b></span>
-        <span class="tb">REV <b>A</b></span>
+        <span class="tb">REV <b>B</b></span>
         <span class="tb tb--grow">SHEET 2 OF 5</span>
       </div>
     </figure>
@@ -682,8 +832,8 @@
         <tbody>
           <tr><td>Gateway operated by</td><td>You, in your DC or VPC</td><td>Ericsson</td></tr>
           <tr><td>Clientless ZTNA for vendors</td><td><span class="pill pill--deny">Not available</span></td><td><span class="pill pill--allow">Available</span></td></tr>
-          <tr><td>FIPS 140-3</td><td><span class="pill pill--allow">Yes, with certified hardware</span></td><td>—</td></tr>
-          <tr><td>Capacity</td><td>You license 250 Mbps – 4 Gbps</td><td>Managed, with a shared data pool</td></tr>
+          <tr><td>FIPS 140-3</td><td><span class="pill pill--allow">Yes, with certified hardware</span></td><td>Not available</td></tr>
+          <tr><td>Capacity</td><td>You license 250 Mbps to 4 Gbps</td><td>Managed, with a shared data pool</td></tr>
           <tr><td>Grid data plane sits</td><td>In your facility</td><td>In Ericsson's cloud</td></tr>
           <tr><td>Redundancy</td><td>Active/standby, same data center only</td><td>Provider-managed</td></tr>
         </tbody>
@@ -692,142 +842,193 @@
 
     <div class="note note--warn">
       <span class="note__label">The conflict to resolve before you buy</span>
-      <p>The strongest OT argument for this product is <strong>isolated, agentless vendor access</strong> — and that is cloud-delivered only. The strongest argument for hosting it yourself is keeping the grid data plane and FIPS posture in your own building. Sheet 1 shows both at once, which is a real deployment shape but means two gateways and two licenses. Decide deliberately rather than discovering it in design review.</p>
+      <p>The strongest OT argument for this product is <strong>isolated, agentless vendor access</strong>, and that is cloud-delivered only. The strongest argument for hosting it yourself is keeping the grid data plane and FIPS posture in your own building. Sheet 1 shows both at once, which is a real deployment shape but means two gateways and two licenses. Decide deliberately rather than discovering it in design review.</p>
     </div>
   </section>
 
-  <!-- ============ 4 ============ -->
+  <!-- ============ 5 ============ -->
   <section id="undermodem">
     <h2>Under the modem</h2>
     <div class="sec__rule"></div>
-    <p class="sec__lede prose">SUB-042 in detail. The virtualization host is the important part: VMs behind the modem are addressed exactly like physical gear, and each one is either a <em>defined resource</em> or it is dark.</p>
+    <p class="sec__lede prose">SUB-042 in detail, and the sheet that shows the limit of what NCX does. Two separate mechanisms are at work here. NCX decides who may reach this site at all, and each device behind the modem is either a <em>defined resource</em> or it is dark. The router zone firewall decides what may move <em>between</em> the zones once something is already inside the cabinet, and NCX has no view of that at all.</p>
 
     <figure class="sheet">
       <div class="sheet__canvas">
-        <svg viewBox="0 0 1040 510" role="img" aria-label="Detail of the SUB-042 site: the modem, its two WAN tunnels, the site LAN, a virtualization host running three VMs, and physical devices marked as defined resources or dark assets.">
+        <svg viewBox="0 0 1040 726" role="img" aria-labelledby="s3title s3desc">
+          <title id="s3title">SUB-042 site detail with three LAN zones behind the modem</title>
+          <desc id="s3desc">The SUB-042 modem carries two outbound WAN tunnels. Below it, three separate router LAN ports feed three zones: LAN-OT-CTRL holding the RTU and two protective relays, LAN-OT-APPS holding the virtualization host and its three VMs, and LAN-AUX holding the camera and an unidentified spare device. The zone firewall denies traffic between zones except one allow rule from LAN-OT-APPS to LAN-OT-CTRL.</desc>
           <defs>
             <marker id="arwC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M0,0 L10,5 L0,10 z" fill="var(--fabric)"/>
+            </marker>
+            <marker id="arwCt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--rule-strong)"/>
             </marker>
           </defs>
 
           <path class="d-tunnel" d="M150,56 L150,18" marker-end="url(#arwC)"/>
           <path class="d-tunnel" d="M262,56 L262,18" marker-end="url(#arwC)"/>
-          <text class="d-s" x="292" y="26">2 tunnels — one per active WAN — to the Service Gateway</text>
+          <text class="d-s" x="292" y="26">2 tunnels, one per active WAN, to the Service Gateway</text>
           <text class="d-s" x="292" y="41">carrier B stands by; DPD flips traffic in about 5 seconds</text>
 
-          <!-- router -->
-          <rect class="d-node--fabric" x="60" y="56" width="316" height="112" rx="4"/>
-          <text class="d-hd d-hd--f" x="76" y="80">SUB-042 site router · the "modem"</text>
+          <rect class="d-node--fabric" x="60" y="56" width="940" height="112" rx="4"/>
+          <text class="d-hd d-hd--f" x="76" y="80">SUB-042 site router, the "modem"</text>
           <text class="d-t" x="76" y="99">Cradlepoint E3000</text>
           <rect class="d-node" x="76" y="110" width="142" height="26" rx="2"/>
           <text class="d-s" x="147" y="127" text-anchor="middle">WAN1 · 5G carrier A</text>
           <rect class="d-node" x="228" y="110" width="132" height="26" rx="2"/>
           <text class="d-s" x="294" y="127" text-anchor="middle">WAN2 · 5G carrier B</text>
-          <text class="d-s" x="76" y="155">LAN gateway 192.168.1.1 · NCX owns the tunnel + DNS config</text>
+          <text class="d-s" x="76" y="155">NCX owns the tunnel, DNS and routing config. The LAN zones below are local NCOS config.</text>
 
-          <!-- side panels -->
-          <rect class="d-node" x="404" y="56" width="286" height="112" rx="3"/>
-          <text class="d-hd" x="418" y="80">What the fabric can see</text>
-          <text class="d-s" x="418" y="101">Only addresses defined as resources</text>
-          <text class="d-s" x="418" y="117">in NetCloud Manager. Everything else</text>
-          <text class="d-s" x="418" y="133">on this LAN is unreachable and</text>
-          <text class="d-s" x="418" y="149">unresolvable from outside the site.</text>
+          <rect class="d-node" x="600" y="70" width="384" height="84" rx="3"/>
+          <text class="d-hd" x="614" y="92">Two different jobs</text>
+          <text class="d-s" x="614" y="110">NCX decides who may reach this site from outside.</text>
+          <text class="d-s" x="614" y="126">The zone firewall on this router decides what may</text>
+          <text class="d-s" x="614" y="142">move between the zones once something is inside.</text>
 
-          <rect class="d-node--dark" x="712" y="56" width="288" height="112" rx="3"/>
-          <text class="d-hd" x="726" y="80">What it does not do</text>
-          <text class="d-s" x="726" y="101">Devices on this LAN still talk to each</text>
-          <text class="d-s" x="726" y="117">other freely. NCX segments the way in,</text>
-          <text class="d-s" x="726" y="133">not the inside. Intra-site separation is</text>
-          <text class="d-s" x="726" y="149">still VLANs and local firewall rules.</text>
+          <path class="d-thin" d="M140,168 L140,660"/>
+          <path class="d-thin" d="M140,268 L200,268" marker-end="url(#arwCt)"/>
+          <path class="d-thin" d="M140,452 L200,452" marker-end="url(#arwCt)"/>
+          <path class="d-thin" d="M140,626 L200,626" marker-end="url(#arwCt)"/>
+          <text class="d-zt" x="60" y="186">ROUTER LAN PORTS</text>
+          <text class="d-s" x="146" y="262">port 2</text>
+          <text class="d-s" x="146" y="446">port 3</text>
+          <text class="d-s" x="146" y="620">port 4</text>
 
-          <!-- LAN bus -->
-          <path class="d-thin" d="M218,168 L218,206"/>
-          <path class="d-thin" d="M64,206 L1000,206" style="stroke-width:2"/>
-          <text class="d-zt" x="64" y="196">SITE LAN 192.168.1.0/24</text>
-          <path class="d-thin" d="M270,206 L270,250 M585,206 L585,250 M751,206 L751,250 M917,206 L917,250 M585,326 L585,370 M751,326 L751,370 M917,326 L917,370"/>
+          <rect class="d-node--fabric" x="200" y="194" width="800" height="150" rx="4"/>
+          <text class="d-hd d-hd--f" x="216" y="218">ZONE  LAN-OT-CTRL</text>
+          <text class="d-s" x="392" y="218">192.168.20.0/24 · protection and control · no user workstations</text>
 
-          <!-- hypervisor -->
-          <rect class="d-node--ot" x="60" y="250" width="440" height="216" rx="4"/>
-          <text class="d-hd" x="76" y="274">Virtualization host · 192.168.1.20</text>
-          <text class="d-s" x="76" y="292">small server in the substation control cabinet</text>
+          <rect class="d-node" x="216" y="234" width="240" height="76" rx="3"/>
+          <text class="d-t" x="228" y="256">RTU-042</text>
+          <text class="d-s" x="228" y="273">192.168.20.30 · DNP3</text>
+          <rect x="228" y="282" width="150" height="18" fill="var(--allow-soft)" stroke="var(--allow)" stroke-width="1"/>
+          <text class="d-allowtx" x="303" y="295" text-anchor="middle">SUB042-RTU</text>
 
-          <rect class="d-node" x="76" y="304" width="408" height="46" rx="2"/>
-          <text class="d-t" x="88" y="322">HMI-042 · 192.168.1.21</text>
-          <text class="d-s" x="88" y="338">Windows engineering HMI · HTTPS + RDP</text>
-          <rect x="330" y="313" width="142" height="18" fill="var(--allow-soft)" stroke="var(--allow)" stroke-width="1"/>
-          <text class="d-allowtx" x="401" y="326" text-anchor="middle">SUB042-HMI</text>
+          <rect class="d-node" x="480" y="234" width="240" height="76" rx="3"/>
+          <text class="d-t" x="492" y="256">RELAY-A</text>
+          <text class="d-s" x="492" y="273">192.168.20.31 · HTTPS</text>
+          <rect x="492" y="282" width="150" height="18" fill="var(--allow-soft)" stroke="var(--allow)" stroke-width="1"/>
+          <text class="d-allowtx" x="567" y="295" text-anchor="middle">SUB042-RELAY-A</text>
 
-          <rect class="d-node" x="76" y="358" width="408" height="46" rx="2"/>
-          <text class="d-t" x="88" y="376">PGW-042 · 192.168.1.22</text>
-          <text class="d-s" x="88" y="392">protocol gateway · DNP3 ↔ Modbus</text>
-          <rect x="330" y="367" width="142" height="18" fill="var(--allow-soft)" stroke="var(--allow)" stroke-width="1"/>
-          <text class="d-allowtx" x="401" y="380" text-anchor="middle">SUB042-PGW</text>
+          <rect class="d-node" x="744" y="234" width="240" height="76" rx="3"/>
+          <text class="d-t" x="756" y="256">RELAY-B</text>
+          <text class="d-s" x="756" y="273">192.168.20.32 · HTTPS</text>
+          <rect x="756" y="282" width="150" height="18" fill="var(--allow-soft)" stroke="var(--allow)" stroke-width="1"/>
+          <text class="d-allowtx" x="831" y="295" text-anchor="middle">SUB042-RELAY-B</text>
 
-          <rect class="d-node--dark" x="76" y="412" width="408" height="46" rx="2"/>
-          <text class="d-t" x="88" y="430">HIST-042 · 192.168.1.23</text>
-          <text class="d-s" x="88" y="446">local historian collector · pushes out only</text>
-          <rect x="330" y="421" width="142" height="18" fill="none" stroke="var(--dark-asset)" stroke-width="1" stroke-dasharray="3 2"/>
-          <text class="d-s" x="401" y="434" text-anchor="middle">NOT DEFINED — DARK</text>
+          <text class="d-s" x="216" y="330">Serial RTU on RS-232 sits behind PGW-042 and is reached only through it. One unmanaged switch serves this zone.</text>
 
-          <!-- physical row 1 -->
-          <rect class="d-node" x="516" y="250" width="138" height="76" rx="3"/>
-          <text class="d-t" x="528" y="272">RTU-042</text>
-          <text class="d-s" x="528" y="289">192.168.1.30 · DNP3</text>
-          <rect x="528" y="298" width="114" height="18" fill="var(--allow-soft)" stroke="var(--allow)" stroke-width="1"/>
-          <text class="d-allowtx" x="585" y="311" text-anchor="middle">SUB042-RTU</text>
+          <rect x="404" y="350" width="392" height="20" fill="var(--allow-soft)" stroke="var(--allow)" stroke-width="1" rx="2"/>
+          <text class="d-allowtx" x="600" y="364" text-anchor="middle">ALLOW  LAN-OT-APPS to LAN-OT-CTRL  TCP 443, TCP 20000  ·  reverse denied</text>
 
-          <rect class="d-node" x="682" y="250" width="138" height="76" rx="3"/>
-          <text class="d-t" x="694" y="272">RELAY-A</text>
-          <text class="d-s" x="694" y="289">192.168.1.31 · HTTPS</text>
-          <rect x="694" y="298" width="114" height="18" fill="var(--allow-soft)" stroke="var(--allow)" stroke-width="1"/>
-          <text class="d-allowtx" x="751" y="311" text-anchor="middle">SUB042-RELAY-A</text>
+          <rect class="d-node--ot" x="200" y="378" width="800" height="190" rx="4"/>
+          <text class="d-hd" x="216" y="402">ZONE  LAN-OT-APPS</text>
+          <text class="d-s" x="392" y="402">192.168.10.0/24 · virtualization host 192.168.10.20 in the control cabinet</text>
 
-          <rect class="d-node" x="848" y="250" width="138" height="76" rx="3"/>
-          <text class="d-t" x="860" y="272">RELAY-B</text>
-          <text class="d-s" x="860" y="289">192.168.1.32 · HTTPS</text>
-          <rect x="860" y="298" width="114" height="18" fill="var(--allow-soft)" stroke="var(--allow)" stroke-width="1"/>
-          <text class="d-allowtx" x="917" y="311" text-anchor="middle">SUB042-RELAY-B</text>
+          <rect class="d-node" x="216" y="418" width="240" height="134" rx="3"/>
+          <text class="d-t" x="228" y="440">HMI-042</text>
+          <text class="d-s" x="228" y="457">192.168.10.21</text>
+          <text class="d-s" x="228" y="474">Windows engineering HMI</text>
+          <text class="d-s" x="228" y="491">HTTPS + RDP</text>
+          <rect x="228" y="504" width="150" height="18" fill="var(--allow-soft)" stroke="var(--allow)" stroke-width="1"/>
+          <text class="d-allowtx" x="303" y="517" text-anchor="middle">SUB042-HMI</text>
 
-          <!-- physical row 2 -->
-          <rect class="d-node--dark" x="516" y="370" width="138" height="76" rx="3"/>
-          <text class="d-t" x="528" y="392">CAMERA</text>
-          <text class="d-s" x="528" y="409">192.168.1.50</text>
-          <text class="d-s" x="528" y="428">no resource → dark</text>
+          <rect class="d-node" x="480" y="418" width="240" height="134" rx="3"/>
+          <text class="d-t" x="492" y="440">PGW-042</text>
+          <text class="d-s" x="492" y="457">192.168.10.22</text>
+          <text class="d-s" x="492" y="474">protocol gateway</text>
+          <text class="d-s" x="492" y="491">DNP3 to Modbus, fronts serial</text>
+          <rect x="492" y="504" width="150" height="18" fill="var(--allow-soft)" stroke="var(--allow)" stroke-width="1"/>
+          <text class="d-allowtx" x="567" y="517" text-anchor="middle">SUB042-PGW</text>
 
-          <rect class="d-node--dark" x="682" y="370" width="138" height="76" rx="3"/>
-          <text class="d-t" x="694" y="392">SPARE / UNKNOWN</text>
-          <text class="d-s" x="694" y="409">192.168.1.64</text>
-          <text class="d-s" x="694" y="428">no resource → dark</text>
+          <rect class="d-node--dark" x="744" y="418" width="240" height="134" rx="3"/>
+          <text class="d-t" x="756" y="440">HIST-042</text>
+          <text class="d-s" x="756" y="457">192.168.10.23</text>
+          <text class="d-s" x="756" y="474">local historian collector</text>
+          <text class="d-s" x="756" y="491">pushes out only</text>
+          <rect x="756" y="504" width="150" height="18" fill="none" stroke="var(--dark-asset)" stroke-width="1" stroke-dasharray="3 2"/>
+          <text class="d-s" x="831" y="517" text-anchor="middle">NOT DEFINED, DARK</text>
 
-          <rect class="d-node--dark" x="848" y="370" width="138" height="76" rx="3"/>
-          <text class="d-t" x="860" y="392">SERIAL RTU</text>
-          <text class="d-s" x="860" y="409">RS-232 behind PGW</text>
-          <text class="d-s" x="860" y="428">reached via PGW only</text>
+          <rect x="440" y="574" width="320" height="20" fill="var(--deny-soft)" stroke="var(--deny)" stroke-width="1" rx="2"/>
+          <text class="d-denytx" x="600" y="588" text-anchor="middle">DENY  LAN-AUX to every other zone, both directions</text>
+
+          <rect class="d-node--dark" x="200" y="602" width="800" height="112" rx="4"/>
+          <text class="d-hd" x="216" y="626">ZONE  LAN-AUX</text>
+          <text class="d-s" x="360" y="626">192.168.30.0/24 · untrusted, unpatched, or unidentified</text>
+
+          <rect class="d-node" x="216" y="638" width="240" height="60" rx="3"/>
+          <text class="d-t" x="228" y="660">CAMERA</text>
+          <text class="d-s" x="228" y="677">192.168.30.50 · no resource</text>
+
+          <rect class="d-node" x="480" y="638" width="240" height="60" rx="3"/>
+          <text class="d-t" x="492" y="660">SPARE / UNKNOWN</text>
+          <text class="d-s" x="492" y="677">192.168.30.64 · no resource</text>
+
+          <text class="d-s" x="744" y="660">Dark to the fabric and now isolated</text>
+          <text class="d-s" x="744" y="677">locally too. Before zoning, the camera</text>
+          <text class="d-s" x="744" y="694">had a clear layer 2 path to both relays.</text>
         </svg>
       </div>
       <div class="sheet__legend">
-        <span class="lg lg--fabric"><i></i>tunnel to gateway</span>
-        <span class="lg lg--ot"><i></i>virtualization host</span>
-        <span class="lg lg--dark"><i></i>dark — not a defined resource</span>
+        <span class="lg lg--fabric"><i></i>tunnel to gateway, and the control zone</span>
+        <span class="lg lg--ot"><i></i>application zone, virtualization host</span>
+        <span class="lg lg--dark"><i></i>dark, not a defined resource</span>
+        <span class="lg lg--deny"><i></i>zone firewall boundary</span>
       </div>
       <div class="sheet__title">
         <span class="tb">DWG <b>NCX-GRID-REF</b></span>
         <span class="tb">TITLE <b>SUB-042 site detail</b></span>
-        <span class="tb">REV <b>A</b></span>
+        <span class="tb">REV <b>B</b></span>
         <span class="tb tb--grow">SHEET 3 OF 5</span>
       </div>
     </figure>
 
-    <figcaption>The three VMs on <span class="m">192.168.1.20</span> are ordinary LAN hosts as far as the modem is concerned — the fabric never knows they are virtual. What separates HMI-042 from HIST-042 is one entry in NetCloud Manager, not anything about the hypervisor.</figcaption>
+    <figcaption>The three VMs on <span class="m">192.168.10.20</span> are ordinary LAN hosts as far as the modem is concerned, and the fabric never knows they are virtual. What separates HMI-042 from HIST-042 is one entry in NetCloud Manager. What separates the camera from RELAY-A is a zone forwarding rule on the router.</figcaption>
+
+    <div class="tablewrap">
+      <table>
+        <caption>Zone forwarding at SUB-042, default deny between every pair</caption>
+        <thead>
+          <tr><th style="width:30%">From</th><th style="width:26%">To</th><th style="width:14%">Action</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="m">LAN-OT-APPS</td><td class="m">LAN-OT-CTRL</td>
+            <td><span class="pill pill--allow">TCP 443, 20000</span></td>
+            <td>HMI-042 reaches the relay web interfaces. PGW-042 reaches the RTU. Nothing else.</td>
+          </tr>
+          <tr>
+            <td class="m">LAN-OT-CTRL</td><td class="m">LAN-OT-APPS</td>
+            <td><span class="pill pill--deny">Deny</span></td>
+            <td>A relay has no reason to open a session to a server. If one tries, that is the alert you want.</td>
+          </tr>
+          <tr>
+            <td class="m">LAN-AUX</td><td>any other zone</td>
+            <td><span class="pill pill--deny">Deny</span></td>
+            <td>The camera is the least patched device at the site. This is the rule that matters most.</td>
+          </tr>
+          <tr>
+            <td>any other zone</td><td class="m">LAN-AUX</td>
+            <td><span class="pill pill--deny">Deny</span></td>
+            <td>Stops the camera being used as a staging point from the inside as well.</td>
+          </tr>
+          <tr>
+            <td>any zone</td><td>the NCX tunnel</td>
+            <td><span class="pill pill--allow">Allow</span></td>
+            <td>Only what an NCX access policy already permits gets anywhere on the far side.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <div class="note note--ot">
-      <span class="note__label">Practical note on VMs behind a modem</span>
-      <p>Two things to get right at build time. First, <strong>do not change a LAN IP after the router is onboarded as an NCX site</strong> — it breaks the address bonding at the gateway, so pin your VM addresses before you onboard. Second, if a VM needs to <em>initiate</em> outbound (a historian pushing to the data center), that is a separate policy from anyone reaching in; direction is not implied.</p>
+      <span class="note__label">Practical notes on building this</span>
+      <p>Four things to get right. First, <strong>do not change a LAN IP after the router is onboarded as an NCX site</strong>, because it breaks the address bonding at the gateway. Pin the zone addressing before you onboard. Second, if a VM needs to <em>initiate</em> outbound, such as a historian pushing to the data center, that is a separate policy from anyone reaching in. Direction is not implied. Third, devices sharing one zone still reach each other at layer 2, and that traffic never touches the router, so neither the zone firewall nor the Hybrid Mesh Firewall east-west inspection will see it. Zoning contains movement between groups, not inside one. Fourth, confirm with the SE that onboarding a router as an NCX site does not constrain local multi-LAN and zone firewall configuration the way it already constrains tunnels, DNS and routing.</p>
     </div>
   </section>
 
-  <!-- ============ 5 ============ -->
+  <!-- ============ 6 ============ -->
   <section id="objects">
     <h2>Resources and policy</h2>
     <div class="sec__rule"></div>
@@ -835,25 +1036,31 @@
 
     <div class="tablewrap">
       <table>
-        <caption>Resource catalog — SUB-042</caption>
+        <caption>Resource catalog, SUB-042</caption>
         <thead>
           <tr><th style="width:22%">Resource name</th><th style="width:20%">Target</th><th style="width:20%">Ports</th><th>Purpose</th></tr>
         </thead>
         <tbody>
-          <tr><td class="m">SUB042-HMI</td><td class="m">192.168.1.21</td><td class="m">TCP 443, 3389</td><td>Engineering HMI VM</td></tr>
-          <tr><td class="m">SUB042-PGW</td><td class="m">192.168.1.22</td><td class="m">TCP 20000</td><td>Protocol gateway VM, fronts serial RTU</td></tr>
-          <tr><td class="m">SUB042-RTU</td><td class="m">192.168.1.30</td><td class="m">TCP 20000</td><td>DNP3 outstation</td></tr>
-          <tr><td class="m">SUB042-RELAY-A</td><td class="m">192.168.1.31</td><td class="m">TCP 443</td><td>Protective relay web interface</td></tr>
-          <tr><td class="m">SUB042-RELAY-B</td><td class="m">192.168.1.32</td><td class="m">TCP 443</td><td>Protective relay web interface</td></tr>
+          <tr><td class="m">SUB042-HMI</td><td class="m">192.168.10.21</td><td class="m">TCP 443, 3389</td><td>Engineering HMI VM</td></tr>
+          <tr><td class="m">SUB042-PGW</td><td class="m">192.168.10.22</td><td class="m">TCP 20000</td><td>Protocol gateway VM, fronts serial RTU</td></tr>
+          <tr><td class="m">SUB042-RTU</td><td class="m">192.168.20.30</td><td class="m">TCP 20000</td><td>DNP3 outstation</td></tr>
+          <tr><td class="m">SUB042-RELAY-A</td><td class="m">192.168.20.31</td><td class="m">TCP 443</td><td>Protective relay web interface</td></tr>
+          <tr><td class="m">SUB042-RELAY-B</td><td class="m">192.168.20.32</td><td class="m">TCP 443</td><td>Protective relay web interface</td></tr>
         </tbody>
       </table>
     </div>
 
-    <p class="prose">Site tags do the scaling work. SUB-042 carries <span class="m">substation</span>, <span class="m">district-4</span>, <span class="m">ncx-prod</span>; RCL-118 carries <span class="m">recloser</span>, <span class="m">district-4</span>. A policy written against a tag covers every site that will ever carry it, including ones built next year.</p>
+    <p class="prose">Site tags do the scaling work. SUB-042 carries <span class="m">substation</span>, <span class="m">district-4</span>, <span class="m">ncx-prod</span>. RCL-118 carries <span class="m">recloser</span>, <span class="m">district-4</span>, <span class="m">ncx-prod</span>. CREW-07 carries <span class="m">mobile</span>, <span class="m">district-4</span>, <span class="m">ncx-prod</span>. A policy written against a tag covers every site that will ever carry it, including ones built next year.</p>
+
+    <div class="note note--warn">
+      <span class="note__label">Two traps in the tag model</span>
+      <p>First, <span class="m">ncx-prod</span> has to be applied at onboarding, not later. Any site missing it is silently excluded from every machine-path policy, and the failure looks like a polling problem rather than a policy problem. RCL-118 exists in this example specifically to make that visible: it holds nothing but an RTU, so a missing tag takes the whole site off SCADA.</p>
+      <p>Second, the wildcard resource names below (<span class="m">*-HMI</span>, <span class="m">*-RTU</span>) carry the entire scaling story, and the published documentation only describes wildcards for <strong>FQDN</strong> destinations. If wildcards do not apply to named resources, every policy here has to enumerate sites and runs into the 20-entry ceiling almost immediately. Confirm this with the SE before designing around it.</p>
+    </div>
 
     <div class="tablewrap">
       <table>
-        <caption>Access policy — evaluated top down, first match wins</caption>
+        <caption>Access policy, evaluated top down, first match wins</caption>
         <thead>
           <tr><th style="width:5%">#</th><th style="width:27%">Source</th><th style="width:30%">Destination</th><th style="width:12%">Action</th><th>Why</th></tr>
         </thead>
@@ -881,13 +1088,20 @@
           </tr>
           <tr>
             <td class="m num">4</td>
-            <td>SAML group <span class="m">Vendor-RelayOEM</span></td>
-            <td><span class="m">SUB042-RELAY-A</span> via clientless portal</td>
+            <td><span class="m">10.30.12.55/32</span> (historian)</td>
+            <td><span class="m">*-PGW</span> on tag <span class="m">ncx-prod</span></td>
             <td><span class="pill pill--allow">Allow</span></td>
-            <td>Third party, brokered and isolated, time-boxed.</td>
+            <td>Machine path, collection. Without this rule the historian on sheet 1 collects nothing, because rule 6 catches it.</td>
           </tr>
           <tr>
             <td class="m num">5</td>
+            <td>SAML group <span class="m">Vendor-RelayOEM</span></td>
+            <td><span class="m">SUB042-RELAY-A</span> via clientless portal</td>
+            <td><span class="pill pill--allow">Allow</span></td>
+            <td>Third party, brokered and isolated, time-boxed. <strong>Requires the cloud-delivered model</strong>, which is not the gateway drawn on sheet 1. See below.</td>
+          </tr>
+          <tr>
+            <td class="m num">6</td>
             <td>any</td>
             <td>any</td>
             <td><span class="pill pill--deny">Deny</span></td>
@@ -899,19 +1113,24 @@
 
     <div class="grid2">
       <div class="card">
-        <h4>Human paths (1, 2, 4)</h4>
+        <h4>Human paths (1, 2, 5)</h4>
         <p>Source is an identity claim from Entra ID or Okta, so MFA, conditional access, and the leaver process govern grid access for free. Move someone out of <span class="m">Relay-Techs</span> and their access is gone at the next evaluation.</p>
       </div>
       <div class="card">
-        <h4>Machine path (3)</h4>
-        <p>Source is one host address, destination is two named resource classes, on one port each. Static, narrow, always on, and easy to defend in an audit. Do not attempt to put a user login in front of SCADA polling.</p>
+        <h4>Machine paths (3, 4)</h4>
+        <p>Source is one host address, destination is a named resource class on one port. Static, narrow, always on, and easy to defend in an audit. Do not attempt to put a user login in front of SCADA polling or historian collection.</p>
       </div>
     </div>
 
     <p class="prose">Note the ceiling: <strong>20 source entries and 20 destination entries per policy.</strong> Tags, not lists of site names, are how you stay under it.</p>
+
+    <div class="note note--warn">
+      <span class="note__label">Rule 5 does not work with the gateway on sheet 1</span>
+      <p>The clientless portal is available only in the cloud-delivered model. Sheet 1 draws a customer-hosted Service Gateway in your own data center, which cannot broker a clientless session. As drawn, this rule is aspirational. There are three honest ways to close the gap, and the evaluation covers the trade in Section 8: run the cloud-delivered model and give up the on-premises data plane and the FIPS option, run both models side by side and pay for both, or drop clientless and give vendors a jump host inside <span class="m">LAN-OT-APPS</span> reached with the NetCloud Client. <strong>Pick one before this drawing goes to a vendor call.</strong></p>
+    </div>
   </section>
 
-  <!-- ============ 6 ============ -->
+  <!-- ============ 7 ============ -->
   <section id="walkthrough">
     <h2>Desk to substation HMI</h2>
     <div class="sec__rule"></div>
@@ -952,7 +1171,7 @@
 
           <rect class="d-node--ot" x="898" y="14" width="128" height="46" rx="3"/>
           <text class="d-s" x="962" y="34" text-anchor="middle">HMI-042</text>
-          <text class="d-s" x="962" y="49" text-anchor="middle">192.168.1.21</text>
+          <text class="d-s" x="962" y="49" text-anchor="middle">192.168.10.21</text>
 
           <!-- lifelines -->
           <path class="d-lifeline" d="M84,60 L84,566 M254,60 L254,566 M424,60 L424,566 M606,60 L606,566 M793,60 L793,566 M962,60 L962,566"/>
@@ -971,10 +1190,10 @@
           <text class="d-s" x="256" y="207" text-anchor="middle">4 · session token + the resource list this user may see</text>
 
           <path class="d-tunnel" d="M84,252 L600,252" marker-end="url(#arwD)"/>
-          <text class="d-s" x="342" y="245" text-anchor="middle">5 · encrypted client tunnel comes up — laptop joins the Secure Connect network</text>
+          <text class="d-s" x="342" y="245" text-anchor="middle">5 · encrypted client tunnel comes up, laptop joins the Secure Connect network</text>
 
           <path class="d-tunnel" style="stroke-width:1.8" d="M84,292 L600,292" marker-end="url(#arwD)"/>
-          <text class="d-s" x="342" y="285" text-anchor="middle">6 · opens https://sub042-hmi.grid.internal — name resolves inside the fabric only</text>
+          <text class="d-s" x="342" y="285" text-anchor="middle">6 · opens https://sub042-hmi.grid.internal, resolves inside the fabric only</text>
 
           <rect x="616" y="308" width="168" height="42" fill="var(--allow-soft)" stroke="var(--allow)" stroke-width="1.2"/>
           <text class="d-allowtx" x="700" y="326" text-anchor="middle">7 · POLICY 1 MATCHES</text>
@@ -984,14 +1203,14 @@
           <text class="d-s" x="696" y="369" text-anchor="middle">8 · into the GRE/IPsec tunnel</text>
 
           <path class="d-tunnel" style="stroke-width:1.8" d="M793,414 L956,414" marker-end="url(#arwD)"/>
-          <text class="d-s" x="874" y="407" text-anchor="middle">9 · TCP 443 → 192.168.1.21</text>
+          <text class="d-s" x="874" y="407" text-anchor="middle">9 · TCP 443 → 192.168.10.21</text>
 
           <path class="d-tunnel" style="stroke-width:1.4" d="M956,452 L90,452" marker-end="url(#arwD)"/>
-          <text class="d-s" x="520" y="445" text-anchor="middle">10 · HMI loads. Return traffic reverses the same path — no other route exists.</text>
+          <text class="d-s" x="520" y="445" text-anchor="middle">10 · HMI loads. Return traffic reverses the same path. No other route exists.</text>
 
           <!-- denial -->
           <path class="d-deny" d="M84,506 L600,506" marker-end="url(#arwDn)" stroke-dasharray="6 4"/>
-          <text class="d-denytx" x="342" y="499" text-anchor="middle">11 · same user tries the substation camera at 192.168.1.50</text>
+          <text class="d-denytx" x="342" y="499" text-anchor="middle">11 · same user tries the substation camera at 192.168.30.50</text>
           <rect x="616" y="522" width="212" height="42" fill="var(--deny-soft)" stroke="var(--deny)" stroke-width="1.2"/>
           <text class="d-denytx" x="722" y="540" text-anchor="middle">NO POLICY MATCH → DROPPED</text>
           <text class="d-denytx" x="722" y="555" text-anchor="middle">THE NAME NEVER RESOLVED EITHER</text>
@@ -1000,7 +1219,7 @@
       <div class="sheet__title">
         <span class="tb">DWG <b>NCX-GRID-REF</b></span>
         <span class="tb">TITLE <b>User access sequence</b></span>
-        <span class="tb">REV <b>A</b></span>
+        <span class="tb">REV <b>B</b></span>
         <span class="tb tb--grow">SHEET 4 OF 5</span>
       </div>
     </figure>
@@ -1008,7 +1227,7 @@
     <ol class="steps">
       <li>
         <h4>The client is already running</h4>
-        <p>On a managed laptop the NetCloud Client is always-on and starts with the machine. The engineer does not "connect to the VPN" — there is no on/off ritual tied to being out of the office.</p>
+        <p>On a managed laptop the NetCloud Client is always-on and starts with the machine. The engineer does not "connect to the VPN". There is no on/off ritual tied to being out of the office.</p>
       </li>
       <li>
         <h4>Identity, not location, opens the door</h4>
@@ -1028,11 +1247,11 @@
       </li>
       <li>
         <h4>Into the tunnel, out at the modem</h4>
-        <p>Traffic enters the GRE-over-IPsec tunnel to SUB-042, over whichever WAN is currently primary. The E3000 decapsulates and delivers to <span class="m">192.168.1.21</span> — a VM on the host in the control cabinet, indistinguishable to the fabric from a physical PC.</p>
+        <p>Traffic enters the GRE-over-IPsec tunnel to SUB-042, over whichever WAN is currently primary. The E3000 decapsulates and delivers to <span class="m">192.168.10.21</span> in the <span class="m">LAN-OT-APPS</span> zone, a VM on the host in the control cabinet, indistinguishable to the fabric from a physical PC.</p>
       </li>
       <li>
         <h4>Everything else stays dark</h4>
-        <p>The same authenticated engineer cannot reach the camera, the spare address, or RELAY-A — the last one because relays belong to a different group. Not "blocked at a firewall": the names do not resolve and no route exists.</p>
+        <p>The same authenticated engineer cannot reach the camera, the spare address, or RELAY-A. The last one is blocked because relays belong to a different group. Not "blocked at a firewall": the names do not resolve and no route exists.</p>
       </li>
     </ol>
 
@@ -1042,7 +1261,7 @@
     </div>
   </section>
 
-  <!-- ============ 7 ============ -->
+  <!-- ============ 8 ============ -->
   <section id="cutover">
     <h2>The cutover that makes it real</h2>
     <div class="sec__rule"></div>
@@ -1061,7 +1280,7 @@
           </defs>
 
           <rect class="d-zone" x="16" y="10" width="492" height="248"/>
-          <text class="d-zt" x="32" y="32">TODAY — IMPLICIT TRUST</text>
+          <text class="d-zt" x="32" y="32">TODAY · IMPLICIT TRUST</text>
           <rect class="d-node" x="34" y="52" width="128" height="56" rx="3"/>
           <text class="d-s" x="98" y="76" text-anchor="middle">any corporate</text>
           <text class="d-s" x="98" y="91" text-anchor="middle">host</text>
@@ -1081,7 +1300,7 @@
           <text class="d-s" x="260" y="228" text-anchor="middle" style="fill:var(--ot)">TWO TRUST MODELS FOR THE SAME ASSETS</text>
 
           <rect class="d-zone" x="532" y="10" width="492" height="248"/>
-          <text class="d-zt" x="548" y="32">AFTER CUTOVER — EXPLICIT ACCESS</text>
+          <text class="d-zt" x="548" y="32">AFTER CUTOVER · EXPLICIT ACCESS</text>
           <rect class="d-node" x="550" y="52" width="128" height="56" rx="3"/>
           <text class="d-s" x="614" y="76" text-anchor="middle">authenticated</text>
           <text class="d-s" x="614" y="91" text-anchor="middle">client session</text>
@@ -1095,7 +1314,7 @@
           <path class="d-tunnel" d="M840,80 L868,80" marker-end="url(#arwE)"/>
           <path class="d-deny" d="M556,132 L1000,132" stroke-dasharray="6 4"/>
           <path class="d-deny" d="M770,120 L786,144 M786,120 L770,144"/>
-          <text class="d-denytx" x="556" y="124">corporate routes to 192.168.1.0/24 — withdrawn</text>
+          <text class="d-denytx" x="556" y="124">corporate routes to the site subnets, withdrawn</text>
           <text class="d-s" x="550" y="168">Being on the corporate LAN grants nothing.</text>
           <text class="d-s" x="550" y="185">Undefined gear is unreachable and unresolvable.</text>
           <text class="d-s" x="550" y="202">Every session is attributable to a person or a host.</text>
@@ -1106,18 +1325,18 @@
       <div class="sheet__title">
         <span class="tb">DWG <b>NCX-GRID-REF</b></span>
         <span class="tb">TITLE <b>Before and after cutover</b></span>
-        <span class="tb">REV <b>A</b></span>
+        <span class="tb">REV <b>B</b></span>
         <span class="tb tb--grow">SHEET 5 OF 5</span>
       </div>
     </figure>
 
     <div class="note note--warn">
       <span class="note__label">Prove it one site at a time</span>
-      <p>Withdraw the legacy route for <strong>SUB-042 only</strong> and run a full monthly cycle — including a planned outage and at least one after-hours callout — before touching the second site. The test that matters is not "can the engineer get in"; it is "did anything quietly depend on the flat path that nobody documented."</p>
+      <p>Withdraw the legacy route for <strong>SUB-042 only</strong> and run a full monthly cycle, including a planned outage and at least one after-hours callout, before touching the second site. The test that matters is not "can the engineer get in"; it is "did anything quietly depend on the flat path that nobody documented."</p>
     </div>
   </section>
 
-  <!-- ============ 8 ============ -->
+  <!-- ============ 9 ============ -->
   <section id="failure">
     <h2>When things break</h2>
     <div class="sec__rule"></div>
@@ -1133,11 +1352,11 @@
           <tr>
             <td>Primary WAN at SUB-042</td>
             <td>DPD detects the dead peer; the tunnel tears down roughly 5 seconds after a failed check and traffic moves to the carrier B tunnel. Established TCP sessions drop and reconnect.</td>
-            <td>Accept the reconnect for HMI work. Confirm the ADMS poll timers tolerate a 5–10 second gap.</td>
+            <td>Accept the reconnect for HMI work. Confirm the ADMS poll timers tolerate a 5 to 10 second gap.</td>
           </tr>
           <tr>
             <td>Active Service Gateway</td>
-            <td>The standby takes over — but it must sit in the <strong>same data center</strong>. There is no documented geo-redundant pair.</td>
+            <td>The standby takes over, but it must sit in the <strong>same data center</strong>. There is no documented geo-redundant pair.</td>
             <td>The single largest design risk here. Price a second network for site redundancy and get the answer in writing.</td>
           </tr>
           <tr>
@@ -1157,7 +1376,7 @@
           </tr>
           <tr>
             <td>A device is added at a site</td>
-            <td>Nothing reaches it. Not a fault — the default.</td>
+            <td>Nothing reaches it. Not a fault. It is the default.</td>
             <td>Add "define the resource in NCM" to the commissioning checklist, or field crews will report the fabric as broken.</td>
           </tr>
         </tbody>
@@ -1165,8 +1384,107 @@
     </div>
   </section>
 
+
+  <!-- ============ 10 ============ -->
+  <section id="cip">
+    <h2>Where NERC CIP touches this</h2>
+    <div class="sec__rule"></div>
+    <p class="sec__lede prose">Every site in this example is a <strong>low impact</strong> BES Cyber System. That single fact decides which standard applies, and it is the reason this section is short. Low impact sites do not require an Electronic Security Perimeter. Medium impact sites do, and the fleet plan for medium sites is not settled, so this section states what is true now and marks the rest as open.</p>
+
+    <div class="tablewrap">
+      <table>
+        <caption>What applies at each impact level</caption>
+        <thead>
+          <tr><th style="width:22%">&nbsp;</th><th style="width:39%">Low impact, the fleet today</th><th>Medium impact, planned but not scoped</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Governing standard</td>
+            <td>CIP-003 R2 Attachment 1</td>
+            <td>CIP-005, plus the rest of the medium impact set</td>
+          </tr>
+          <tr>
+            <td>ESP required</td>
+            <td><span class="pill pill--allow">No</span></td>
+            <td><span class="pill pill--deny">Yes</span>, for every applicable Cyber Asset connected by a routable protocol</td>
+          </tr>
+          <tr>
+            <td>Electronic access controls</td>
+            <td>Attachment 1 Section 3. At assets with external routable connectivity, permit only necessary inbound and outbound access, authenticate remote users, protect authentication in transit.</td>
+            <td>ESP with identified Electronic Access Points, inbound and outbound permissions documented by reason, everything else denied.</td>
+          </tr>
+          <tr>
+            <td>Remote access for people</td>
+            <td>Covered by Section 3. No Intermediate System requirement.</td>
+            <td>Interactive Remote Access must terminate at an <strong>Intermediate System</strong>, be encrypted, and use multi-factor. Applies where the site has external routable connectivity.</td>
+          </tr>
+          <tr>
+            <td>Vendor remote access</td>
+            <td>Attachment 1 Section 6. Determine active vendor remote access, be able to disable it, detect malicious inbound and outbound communication tied to it. <strong>Enforceable since 1 April 2026.</strong></td>
+            <td>CIP-005 R3, the same two capabilities, determine and disable.</td>
+          </tr>
+          <tr>
+            <td>Log retention</td>
+            <td>Not specified at this level</td>
+            <td>CIP-007 R4.3, <strong>90 days</strong> of retained logs</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>What NCX gives you, and what you still owe</h3>
+
+    <div class="tablewrap">
+      <table>
+        <caption>Low impact obligations mapped to this design</caption>
+        <thead>
+          <tr><th style="width:26%">Obligation</th><th style="width:37%">What this design provides</th><th>Evidence you still have to produce</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Attachment 1 Section 3, necessary inbound and outbound only</td>
+            <td>Deny-all by default with an ordered, first-match policy. Undefined gear is not addressable and does not resolve.</td>
+            <td>An exported policy set showing the reason for each rule, and evidence that the legacy corporate route is actually gone. Until it is withdrawn, the flat path is the real access control and the policy set is decoration.</td>
+          </tr>
+          <tr>
+            <td>Section 3, authenticate remote users</td>
+            <td>SAML to Entra ID or Okta. MFA, conditional access and the leaver process are inherited from the IdP rather than reimplemented.</td>
+            <td>The IdP configuration, the group-to-policy mapping, and evidence that removal from a group actually removes access.</td>
+          </tr>
+          <tr>
+            <td>Section 6, determine active vendor remote access</td>
+            <td>Vendor sessions are brokered and per-session, so they are enumerable rather than inferred from firewall logs.</td>
+            <td>A named report or console view, and a named person who checks it. Note that the clientless portal is cloud-delivered only, so if the design settles on customer-hosted, this obligation needs a different answer.</td>
+          </tr>
+          <tr>
+            <td>Section 6, disable vendor remote access</td>
+            <td>Per-session evaluation with instant revocation, and group removal at the IdP as the second lever.</td>
+            <td>A written procedure with an owner and a target time, and one tested revocation per year. Model the 90-day ZTNA licence reservation against contractor churn while you are at it.</td>
+          </tr>
+          <tr>
+            <td>Section 6, detect malicious vendor communication</td>
+            <td><span class="pill pill--deny">Not provided by default</span>. Hybrid Mesh Firewall adds IDS and IPS, at extra licence cost, and only for traffic that crosses the router.</td>
+            <td>The detection method, and the export path to a SIEM. ZTNA logs have no built-in long-term retention, so the export is part of the build, not a later improvement.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note note--warn">
+      <span class="note__label">Open, and worth settling before the medium sites arrive</span>
+      <p><strong>Whether the plan is to reclassify these sites or to take on net new ones</strong> changes the answer, because reclassification means retrofitting an ESP into sites already built. Design the boundary at the router now, in the shape on <a href="#undermodem">sheet 3</a>, and the ESP is mostly already there when it is needed.</p>
+      <p><strong>The cloud-delivered model becomes hard to defend at medium impact.</strong> The Service Gateway performs electronic access control, and at medium impact the ZTNA broker also sits in the Interactive Remote Access path. Placing that function in a vendor cloud is the open question NERC has not resolved, and it is being actively drafted rather than settled. Customer-hosted avoids it and cannot do clientless vendor access. That trade is <a href="#hosting">Section 4</a>, and the medium plan decides it.</p>
+      <p><strong>Distribution is not automatically out of scope.</strong> A Distribution Provider is in scope for specific systems: UFLS and UVLS programs meeting the criteria, each RAS subject to a standard, Protection Systems applying to Transmission, and blackstart Cranking Path elements. The site inventory needs an impact classification column supplied by compliance, not an assumption supplied by network engineering.</p>
+    </div>
+
+    <p class="prose">None of the containment work in <a href="#containment">Section 2</a> waits on any of this. Segmentation for blast radius is a security control you own outright, and building it at the router now is also the cheapest path to an ESP later.</p>
+  </section>
+
   <footer>
-    <p>Illustrative reference design based on published Ericsson Cradlepoint documentation as of August 2026. Site names, addresses, and group names are examples. Model-specific throughput, supported router models, and the current state of dynamic routing over the NCX overlay should be confirmed with an Ericsson SE before this shape is committed to.</p>
+    <p>Illustrative reference design based on published Ericsson Cradlepoint documentation retrieved 2026-08-20. Site names, addresses, and group names are examples. Model-specific throughput, supported router models, whether wildcards apply to named resources, whether onboarding a router as an NCX site constrains local zone firewall configuration, and the current state of dynamic routing over the NCX overlay should all be confirmed with an Ericsson SE before this shape is committed to. Impact classification and CIP applicability are decisions for the compliance group, not for network engineering.</p>
   </footer>
 
 </div>
+
+</body>
+</html>
