@@ -17,7 +17,7 @@
 
 **Short answer:** Yes, for the grid sites themselves, *provided* every site rides a Cradlepoint NCX-capable router and you actually decommission the existing routed path from the corporate network to the site subnets. NCX does not add privacy on top of a flat network. It replaces the transport, and the flat path has to go away for the security model to mean anything. It is not a general-purpose replacement for GlobalProtect for the rest of the enterprise, and there are real constraints (single-vendor edge, active/standby HA in one data center only, licensed-throughput hard caps, IPv4 unicast only) documented below.
 
-**Companion documents:** the reference design is `ncx-grid-access-design.html`, the portable diagrams are `diagrams.md`, and the vendor call checklist is `SE-questions-checklist.md`.
+**Companion documents:** the reference design is `ncx-grid-access-design.html`, the portable diagrams are `diagrams.md`, the vendor call checklist is `SE-questions-checklist.md`, and the audience-facing talking points, objection handling and go and kill criteria are in `decision-portfolio.md`.
 
 **One thing it does not do at all:** NCX contains movement *between* sites and between the corporate network and a site. It does nothing about movement *inside* a site. If the requirement is blast radius containment after an endpoint at a site is compromised, read Section 7 before anything else, because that part is local segmentation work and no NCX licence changes it.
 
@@ -312,8 +312,8 @@ worth pulling forward:
    decision, and Section 9.4 explains why medium impact sites push the hosting choice toward
    customer-hosted, which today means no clientless portal.
 
-Everything else is operational or commercial and can be answered before the build rather
-than before the purchase.
+The rest are operational, commercial, compliance or proof questions. They matter, but they
+can be answered before the build rather than before the purchase.
 
 ## 12. Suggested proof of concept
 

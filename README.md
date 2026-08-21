@@ -12,7 +12,9 @@ for containing lateral movement inside a site once that access path exists.
 | [`NCX-Service-Gateway-Site-Access-Evaluation.md`](NCX-Service-Gateway-Site-Access-Evaluation.md) | Product evaluation. Components, how NCX substitutes for a VPN, containment inside a site, NERC CIP applicability, constraints and reasons it might not fit, PoC plan. |
 | [`ncx-grid-access-design.html`](ncx-grid-access-design.html) | Reference design. Ten sections, five numbered drawing sheets: topology, deployment options, site detail under a modem, user access sequence, cutover. Open it in a browser. |
 | [`diagrams.md`](diagrams.md) | The same five sheets in Mermaid. Renders inline on GitHub and in VS Code, for pasting into tickets, wikis, or slides. |
-| [`SE-questions-checklist.md`](SE-questions-checklist.md) | Working checklist for the vendor call. Fifteen questions grouped by what each one blocks, each with why it matters and what a bad answer changes, plus space to record the answer. |
+| [`decision-portfolio.md`](decision-portfolio.md) | Talking points by audience, objection handling, the questions we have to answer ourselves, and explicit go and kill criteria. |
+| [`SE-questions-checklist.md`](SE-questions-checklist.md) | Working checklist for the vendor call. Every vendor question in one place, grouped by what each one blocks, with a good answer and a bad answer for each and space to record what was actually said. |
+| [`index.html`](index.html) | GitHub Pages entry point. Redirects to the reference design. |
 
 The HTML file is a complete standalone document. It pulls fonts from Google Fonts, so
 opened offline it falls back to system fonts and is otherwise unaffected. It prints to
