@@ -3,11 +3,14 @@
 Every question for the Ericsson and Cradlepoint SE, in one place, in the order they should
 be asked. This is the working copy to take into the call and fill in.
 
-This file is the single list. The evaluation
+**This file is the canonical list, and it is the only one.** New questions get added here.
+The evaluation
 ([`NCX-Service-Gateway-Site-Access-Evaluation.md`](NCX-Service-Gateway-Site-Access-Evaluation.md))
 and the decision portfolio ([`decision-portfolio.md`](decision-portfolio.md)) both point
-here rather than carrying their own copies, because two question lists in one repository
-drift, and the diagrams in this repository have already proved that.
+here rather than carrying their own copies. Two question lists in one repository drift, the
+diagrams here have already proved that, and a list people edit live during a call is the
+worst place for it to happen. If a question belongs in the vendor conversation, it belongs
+in this file, whatever document you were reading when you thought of it.
 
 Every question carries four things. **Blocks** says what is waiting on the answer. **Why**
 says where the question comes from. **Good answer** and **bad answer** are the point of the

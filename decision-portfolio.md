@@ -110,13 +110,14 @@ Use this when someone asks "what are we doing and why" in a hallway.
 
 ## 4. Questions for Ericsson and Cradlepoint
 
-The questions live in [`SE-questions-checklist.md`](SE-questions-checklist.md), as a working
-copy with space to record what was actually said. They are grouped by what each one blocks,
-and every one carries a good answer and a bad answer, because the good and bad framing is
-what keeps the conversation from ending in a reassuring non-answer.
+The questions live in [`SE-questions-checklist.md`](SE-questions-checklist.md), which is the
+canonical list. It is a working copy with space to record what was actually said, grouped by
+what each question blocks, and every question carries a good answer and a bad answer,
+because that framing is what keeps the conversation from ending in a reassuring non-answer.
 
-Take that file into the call. What follows is only the shape of it, so this document reads
-end to end without switching files.
+Take that file into the call. **New questions go there, not here.** What follows is only the
+shape of it, so this document reads end to end without switching files. If the two ever
+disagree, the checklist is right.
 
 | Group | Covers | Why it is in this position |
 |---|---|---|
