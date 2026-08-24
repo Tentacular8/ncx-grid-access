@@ -619,27 +619,28 @@
     <header>
       <p class="s-eyebrow">Site topology · protection inside</p>
       <h2>Network segmentation</h2>
-      <p class="s-lede">A managed switch groups devices into VLANs by function. The boundary protection stays exactly the same — what changes is that a compromise now stops at the group edge.</p>
+      <p class="s-lede">The switch tags traffic by function. The modem reads the VLAN tags and enforces separation between the groups. The enforcement point does not move — the switch simply gives the modem something to enforce on.</p>
     </header>
     <div class="s-body">
-      <svg viewBox="0 0 1000 420" role="img" aria-label="Site topology with a managed switch splitting devices into three VLANs, so lateral movement between groups is blocked.">
+      <svg viewBox="0 0 1000 420" role="img" aria-label="Site topology where the managed switch tags traffic into three VLANs and the modem enforces separation between them by VLAN ID.">
         <defs>
           <marker id="a7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
             <path d="M0,0 L10,5 L0,10 z" fill="var(--rule-strong)"/>
           </marker>
         </defs>
 
-        <rect class="d-node--f" x="330" y="10" width="340" height="76" rx="4"/>
-        <text class="d-hd d-hd--f" x="352" y="40">Cradlepoint modem</text>
-        <text class="d-t" x="352" y="64">security policy enforced here</text>
+        <rect class="d-node--f" x="290" y="6" width="420" height="84" rx="4"/>
+        <text class="d-hd d-hd--f" x="312" y="36">Cradlepoint modem · the only enforcement point</text>
+        <text class="d-t" x="312" y="60">verifies VLAN ID tagging and applies zone separation</text>
+        <text class="d-s" x="312" y="80">site ↔ core policy and zone ↔ zone policy both live here</text>
 
         <path class="d-ok" d="M500,86 L500,124"/>
         <rect class="d-node--allow" x="150" y="96" width="170" height="30" rx="3"/>
         <text class="d-oktx" x="235" y="116" text-anchor="middle">PROTECTED · site ↔ core</text>
 
         <rect class="d-node--allow" x="330" y="124" width="340" height="66" rx="4"/>
-        <text class="d-hd" x="352" y="151">Managed switch · VLANs configured</text>
-        <text class="d-s" x="352" y="175">three isolated groups, routed only by policy</text>
+        <text class="d-hd" x="352" y="151">Managed switch · tags only</text>
+        <text class="d-s" x="352" y="175">802.1Q trunk to the modem · does not filter</text>
 
         <path class="d-line" d="M420,190 L200,236" marker-end="url(#a7)"/>
         <path class="d-line" d="M500,190 L500,236" marker-end="url(#a7)"/>
@@ -680,7 +681,7 @@
     <header>
       <p class="s-eyebrow">What we need to decide</p>
       <h2>Decisions and asks</h2>
-      <p class="s-lede">Two decisions unlock the design. Neither is technically difficult; both need an owner and a budget line.</p>
+      <p class="s-lede">Two decisions unlock the design. Neither is technically difficult; both need an owner and a budget line. Neither one blocks us from starting.</p>
     </header>
     <div class="s-body">
       <div class="cards cards--2">
@@ -696,10 +697,11 @@
         <div class="card card--ask">
           <span class="lab">Decision 2 · site switches</span>
           <h3>Access to existing switches, or replace them</h3>
-          <p>Segmentation on slide 7 requires a managed switch we can configure. Today we have neither the access nor, at some sites, the capability.</p>
+          <p><b>The modem stays the enforcement point either way.</b> We are asking the switch to tag traffic per function on an 802.1Q trunk, so the modem can verify the VLAN ID and apply zone separation. The switch never filters and never becomes a security device.</p>
           <ul>
-            <li><b>Gain access</b> — cheapest path where the installed switch is already managed. Needs credentials, an owner, and a config standard.</li>
-            <li><b>Replace</b> — required where switches are unmanaged. Capital cost per site, but it is the only way to get VLANs at those locations.</li>
+            <li><b>Gain access</b> — cheapest path where the installed switch is already managed. Needs credentials, an owner, and a VLAN standard.</li>
+            <li><b>Replace</b> — required where switches are unmanaged. Capital cost per site, and the only way to tag traffic at those locations.</li>
+            <li><b>Not a blocker to starting.</b> Separate modem ports give us zone separation today, capped by port count. Tagging is how we scale past that without re-cabling.</li>
           </ul>
         </div>
       </div>

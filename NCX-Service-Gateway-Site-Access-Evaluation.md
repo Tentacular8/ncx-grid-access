@@ -187,16 +187,22 @@ The first row is the strongest single thing NCX does for this requirement and it
 
 ### 7.1 An ordering that puts the switch dependency last
 
-Site switches are not currently under our administrative control. That constrains tier 3 below and nothing else, so most of the containment value can land while the access conversation is still in progress.
+Site switches are not currently under our administrative control. That constrains tier 3 below and nothing else, so most of the containment value can land while the access conversation is still in progress. Tier 3 is where the switch earns its place, and its role there is narrow: tag traffic so the modem can enforce on it.
 
 | Tier | What | Needs | Closes |
 |---|---|---|---|
 | 0 | NCX deny-all between sites, plus withdraw the legacy corporate routes | Nothing new | Cross-site spread, site to corporate, corporate to site |
 | 1 | OT and non-OT on separate router LANs and physical ports, zone firewall default deny between them | Re-cabling and NCOS config, no switch administration | A corporate or contractor device at a site pivoting onto control gear |
 | 2 | Hypervisor: separate port groups per zone, no bridged path between the OT virtual network and anything else | Already ours | VM to VM movement inside the virtualization host |
-| 3 | Per-function VLANs, port isolation for cameras and unidentified gear, ACLs between OT function groups | Administrative access to the site switches | Movement inside a single zone |
+| 3 | Per-function VLANs tagged at the switch, carried to the modem on an 802.1Q trunk, mapped to router LANs and zones | Administrative access to the site switches, or replacement switches | More zones than the modem has physical ports, and movement inside a single zone |
 
 NCOS supports multiple LANs, binding them to specific Ethernet ports, and a zone firewall where filter policies are one-way and applied per zone-forwarding pair. Two things to confirm on the deployed NCOS version before designing around tier 1: a LAN has to be placed in its own zone rather than sharing the primary LAN zone, and the stock forwarding policies are permissive in the LAN-to-WAN direction, so they get replaced rather than inherited.
+
+**Tiers 1 and 3 are the same control delivered two ways.** Tier 1 gives each zone its own physical port on the modem, which works with an unmanaged switch and needs no switch administration at all — but the zone count is capped by the modem's port count, and it means re-cabling. Tier 3 has the switch tag traffic per function and hand it to the modem on a single trunk, where each VLAN ID maps to its own router LAN and zone. That scales past the port count and avoids re-cabling, at the cost of needing a switch we can configure.
+
+**In both cases the modem is the enforcement point.** The switch does not filter between VLANs and is not asked to. Its only job at tier 3 is to tag traffic accurately so the modem can tell the zones apart and apply the zone-forwarding policy. This is the distinction that matters when the switch conversation comes up: we are asking for tagging, not for the switch to become a security device. Section 7.3 explains why that separation is deliberate.
+
+One thing to confirm with the SE before committing to tier 3, and it is already on the vendor checklist: whether onboarding a router as an NCX site constrains VLAN interfaces and multi-LAN configuration, since NCX owns part of the routing and DNS configuration on an onboarded device. If VLAN-mapped LANs are constrained, tier 1 becomes the ceiling and the number of zones per site is decided by the modem's port count.
 
 ### 7.2 What zoning still does not fix
 
@@ -231,7 +237,11 @@ Ordered by how likely each is to kill or reshape the project.
 
 ## 9. Where NERC CIP touches this
 
-Every site in the current fleet is a **low impact** BES Cyber System. Medium impact sites are planned, but whether that means reclassifying existing sites or taking on net new ones is not yet decided, and the answer changes the design. This section states what is true now and marks the rest as open.
+A **small minority** of sites in the current fleet are low impact BES Cyber Systems. The majority are non-NERC. Medium impact sites are planned, but whether that means reclassifying existing sites or taking on net new ones is not yet decided, and the answer changes the design. This section states what is true now and marks the rest as open.
+
+**The working intent is to apply the low impact control set as the baseline at every site, NERC-registered or not.** Two reasons are in play and they have not been separated: preparing non-NERC sites for possible reclassification, and simply adopting the control set as good practice. They are not the same commitment. Reclassification readiness means the evidence has to hold up to an audit — documented rule justification, retained logs, a tested revocation procedure — and that carries ongoing cost. Best practice means building the same controls and skipping the evidence burden. **Decide which one before the design is committed**, because it determines whether the non-NERC sites need an evidence pipeline or only the controls themselves.
+
+The practical effect on this design is small and worth stating: the architecture is the same either way. Deny-all policy, identity-based access, zone separation at the router and withdrawal of the legacy route are all things we would build regardless of registration. What changes is the paperwork around them, and how much of the site inventory needs an impact classification column rather than a blank one.
 
 ### 9.1 Distribution is not automatically out of scope
 

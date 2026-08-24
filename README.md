@@ -14,6 +14,7 @@ for containing lateral movement inside a site once that access path exists.
 | [`diagrams.md`](diagrams.md) | The same five sheets in Mermaid. Renders inline on GitHub and in VS Code, for pasting into tickets, wikis, or slides. |
 | [`decision-portfolio.md`](decision-portfolio.md) | Talking points by audience, objection handling, the questions we have to answer ourselves, and explicit go and kill criteria. |
 | [`SE-questions-checklist.md`](SE-questions-checklist.md) | **Canonical list of vendor questions**, and the working copy to take into the call. Grouped by what each one blocks, with a good answer and a bad answer for each and space to record what was actually said. New questions go here. |
+| [`ncx-presentation.html`](ncx-presentation.html) | Eight-slide deck for the management conversation. Current access model, the gaps and the goal, three base topology options, flat versus segmented site design, and the two open decisions. Arrow keys to advance, P to print one slide per page. |
 | [`index.html`](index.html) | GitHub Pages entry point. Redirects to the reference design. |
 
 The HTML file is a complete standalone document. It pulls fonts from Google Fonts, so
@@ -54,6 +55,9 @@ decide the shape of the design rather than merely informing it:
 - The medium impact plan. Whether existing low impact sites get reclassified or net new
   medium sites are taken on changes the Electronic Security Perimeter work and pushes the
   cloud-delivered versus customer-hosted decision toward customer-hosted. See Section 9.
+- Whether applying the low impact control set to non-NERC sites is preparation for
+  reclassification or best practice only. The architecture is identical either way. The
+  difference is whether those sites need an audit-grade evidence pipeline. See Section 9.
 
 ## What this does not cover
 
