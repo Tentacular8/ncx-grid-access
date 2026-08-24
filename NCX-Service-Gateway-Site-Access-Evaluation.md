@@ -194,23 +194,36 @@ Site switches are not currently under our administrative control. That constrain
 | 0 | NCX deny-all between sites, plus withdraw the legacy corporate routes | Nothing new | Cross-site spread, site to corporate, corporate to site |
 | 1 | OT and non-OT on separate router LANs and physical ports, zone firewall default deny between them | Re-cabling and NCOS config, no switch administration | A corporate or contractor device at a site pivoting onto control gear |
 | 2 | Hypervisor: separate port groups per zone, no bridged path between the OT virtual network and anything else | Already ours | VM to VM movement inside the virtualization host |
-| 3 | Per-function VLANs tagged at the switch, carried to the modem on an 802.1Q trunk, mapped to router LANs and zones | Administrative access to the site switches, or replacement switches | More zones than the modem has physical ports, and movement inside a single zone |
+| 3 | Per-function VLANs on the switch, carried to the modem on an 802.1Q trunk over a single port, mapped to router LANs and zones | Administrative access to the site switches, or replacement switches | Movement between device groups, and unidentified gear reaching anything at all |
 
 NCOS supports multiple LANs, binding them to specific Ethernet ports, and a zone firewall where filter policies are one-way and applied per zone-forwarding pair. Two things to confirm on the deployed NCOS version before designing around tier 1: a LAN has to be placed in its own zone rather than sharing the primary LAN zone, and the stock forwarding policies are permissive in the LAN-to-WAN direction, so they get replaced rather than inherited.
 
-**Tiers 1 and 3 are the same control delivered two ways.** Tier 1 gives each zone its own physical port on the modem, which works with an unmanaged switch and needs no switch administration at all — but the zone count is capped by the modem's port count, and it means re-cabling. Tier 3 has the switch tag traffic per function and hand it to the modem on a single trunk, where each VLAN ID maps to its own router LAN and zone. That scales past the port count and avoids re-cabling, at the cost of needing a switch we can configure.
+**The planned design uses a single modem port and an 802.1Q trunk**, so tier 3 is the intended shape and tier 1 is a fallback rather than a stepping stone. Tier 1 gives each zone its own physical port on the modem, which needs no switch administration but caps the zone count at the modem's port count and requires re-cabling. It stays in the table because it is what we can build at any site where switch access never arrives, not because it is the target.
 
-**In both cases the modem is the enforcement point.** The switch does not filter between VLANs and is not asked to. Its only job at tier 3 is to tag traffic accurately so the modem can tell the zones apart and apply the zone-forwarding policy. This is the distinction that matters when the switch conversation comes up: we are asking for tagging, not for the switch to become a security device. Section 7.3 explains why that separation is deliberate.
+**Enforcement is split across two layers, and both halves matter.**
 
-One thing to confirm with the SE before committing to tier 3, and it is already on the vendor checklist: whether onboarding a router as an NCX site constrains VLAN interfaces and multi-LAN configuration, since NCX owns part of the routing and DNS configuration on an onboarded device. If VLAN-mapped LANs are constrained, tier 1 becomes the ceiling and the number of zones per site is decided by the modem's port count.
+- **The switch enforces at layer 2.** It does not bridge frames between VLANs. Traffic between device groups cannot cross at the switch at all, and traffic within a group never leaves the switch, so the modem never sees it. A device on a port that is not in a configured VLAN has no bridging path to anywhere.
+- **The modem enforces at layer 3.** It decides whether inter-VLAN routing happens at all, and applies zone-forwarding policy to anything crossing between zones or heading north to the fabric.
+
+Describing the switch as "tagging only" is wrong. VLAN separation *is* filtering, and it is the control doing most of the intra-site containment work. The modem's role is to govern what may be routed between the groups the switch has already separated, and to be the single access point out to the fabric.
+
+**The untagged-device property depends on configuration, not on VLANs existing.** Most switches ship with every port an access port in VLAN 1, so a rogue device on an untouched port lands in VLAN 1 and is bridged normally. "Unidentified gear does not get past layer 2" holds only where unused ports are administratively disabled or assigned to a black-hole VLAN with no routed path, and where the trunk's native VLAN is set to an unused ID. Confirm the installed configuration rather than assuming it, and make it part of the VLAN standard.
+
+Two things to confirm before committing to tier 3. With the SE, already on the vendor checklist: whether onboarding a router as an NCX site constrains VLAN interfaces and multi-LAN configuration, since NCX owns part of the routing and DNS configuration on an onboarded device. Internally: whether the modems have spare LAN ports at all, which decides whether tier 1 is a genuine fallback or unavailable.
 
 ### 7.2 What zoning still does not fix
 
 Devices sharing a zone reach each other at layer 2, and that traffic never reaches the router. Neither the zone firewall nor the Hybrid Mesh Firewall east-west inspection can see it, because inspection only applies to traffic that traverses the router. Zoning contains movement between function groups, not inside one. Until tier 3 is available, the residue inside a zone is covered by host controls and physical access control, and that should be stated rather than assumed. If a vendor presents east-west IDS or IPS as the answer to lateral movement inside a substation, that is the question to put to them.
 
-### 7.3 Put the boundary on the router, not the switch
+### 7.3 The fabric boundary is the modem. The intra-site boundary is shared.
 
-Whatever device enforces the boundary is the device that inherits the scrutiny that comes with the role, and later the compliance requirement load if a site is ever categorized above low impact. If a managed switch enforces zone separation through VLANs, that switch is in scope. If the Cradlepoint is the single access point between zones and out to the fabric, the count stays at one box per site, on hardware already managed through NetCloud Manager. Tiers 0 to 2 build that shape deliberately. Tier 3 then adds depth inside a zone without moving the boundary.
+Two different boundaries, and conflating them is what produced the earlier wrong version of this section.
+
+**The boundary to everything outside the site is the modem, and only the modem.** It is the single access point out to the fabric, it holds the NCX policy, and it is already managed through NetCloud Manager. Nothing about the switch design changes that.
+
+**The boundary between device groups inside the site is shared between the switch and the modem.** The switch separates the groups at layer 2; the modem governs what may be routed between them. Both are enforcing, and the site inventory should record both.
+
+The compliance consequence is worth stating plainly rather than designing around. **A switch that enforces zone separation is performing an access control function, and at any site categorized above low impact it would be in scope for that role** — as would the modem. Choosing VLAN separation therefore means two devices per site carry the role instead of one. That is a legitimate cost of a design that actually contains lateral movement, and the alternative — one enforcing device, zones capped by modem port count — buys a smaller scope footprint by containing less. Make it a deliberate trade rather than an accident, and put the switch in the CIP asset conversation early if any of these sites are candidates for reclassification.
 
 ---
 
