@@ -1,0 +1,766 @@
+<title>DG Network Security Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root{
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"IBM Plex Sans","Segoe UI",Helvetica,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+
+    --ground:#E9EDEE;
+    --surface:#FFFFFF;
+    --surface-2:#EBEFF0;
+    --ink:#131E24;
+    --ink-2:#3F525B;
+    --ink-3:#6B7E87;
+    --rule:#D2DBDE;
+    --rule-strong:#A9B9BF;
+    --fabric:#0F6E8C;
+    --fabric-soft:#DBEAF0;
+    --ot:#9C6B08;
+    --ot-soft:#F6EBD3;
+    --allow:#26765A;
+    --allow-soft:#DCEDE5;
+    --deny:#A03B27;
+    --deny-soft:#F5E2DD;
+    --dark-asset:#63757E;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#070D10;
+      --surface:#111B20;
+      --surface-2:#17232A;
+      --ink:#DFE8EA;
+      --ink-2:#A6B7BD;
+      --ink-3:#7C8F97;
+      --rule:#25333A;
+      --rule-strong:#3C4E57;
+      --fabric:#49AECA;
+      --fabric-soft:#10313B;
+      --ot:#D6A344;
+      --ot-soft:#2E2614;
+      --allow:#54AC84;
+      --allow-soft:#12301F;
+      --deny:#D9765E;
+      --deny-soft:#33191A;
+      --dark-asset:#75888F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#070D10;
+    --surface:#111B20;
+    --surface-2:#17232A;
+    --ink:#DFE8EA;
+    --ink-2:#A6B7BD;
+    --ink-3:#7C8F97;
+    --rule:#25333A;
+    --rule-strong:#3C4E57;
+    --fabric:#49AECA;
+    --fabric-soft:#10313B;
+    --ot:#D6A344;
+    --ot-soft:#2E2614;
+    --allow:#54AC84;
+    --allow-soft:#12301F;
+    --deny:#D9765E;
+    --deny-soft:#33191A;
+    --dark-asset:#75888F;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:var(--body);
+    margin:0;
+    padding:24px 20px 96px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .deck{display:flex;flex-direction:column;align-items:center;gap:28px}
+
+  .slide{
+    container-type:inline-size;
+    position:relative;
+    aspect-ratio:16/9;
+    width:min(100%, calc((100vh - 130px) * 16 / 9), 1280px);
+    background:var(--surface);
+    border:1px solid var(--rule-strong);
+    display:grid;
+    grid-template-rows:auto 1fr;
+    padding:4.2cqw 4.6cqw 3.4cqw;
+    overflow:hidden;
+  }
+
+  .s-eyebrow{
+    font-family:var(--mono);
+    font-size:1.05cqw;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--fabric);
+    margin:0 0 1.1cqw;
+  }
+  .slide h2{
+    font-family:var(--display);
+    font-weight:700;
+    font-size:3.15cqw;
+    line-height:1.06;
+    letter-spacing:-.018em;
+    margin:0 0 .9cqw;
+    text-wrap:balance;
+  }
+  .s-lede{
+    font-size:1.5cqw;
+    line-height:1.45;
+    color:var(--ink-2);
+    margin:0 0 1.4cqw;
+    max-width:76cqw;
+  }
+  .s-body{display:flex;flex-direction:column;justify-content:center;min-height:0}
+  .s-body svg{display:block;width:100%;height:100%;max-height:100%}
+
+  .s-num{
+    position:absolute;
+    right:2.4cqw;bottom:1.8cqw;
+    font-family:var(--mono);
+    font-size:1.05cqw;
+    letter-spacing:.12em;
+    color:var(--ink-3);
+  }
+  .s-tag{
+    position:absolute;
+    left:4.6cqw;bottom:1.8cqw;
+    font-family:var(--mono);
+    font-size:1.05cqw;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+  }
+
+  /* card grids used on slides 2 and 8 */
+  .cards{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:1.6cqw;
+    align-content:center;
+  }
+  .cards--2{grid-template-columns:repeat(2,1fr)}
+  .card{
+    border:1px solid var(--rule);
+    border-top:3px solid var(--deny);
+    background:var(--surface-2);
+    padding:1.7cqw 1.7cqw 1.8cqw;
+  }
+  .card--goal{border-top-color:var(--allow)}
+  .card--ask{border-top-color:var(--fabric)}
+  .card h3{
+    font-family:var(--display);
+    font-size:1.62cqw;
+    font-weight:600;
+    margin:0 0 .7cqw;
+    line-height:1.2;
+  }
+  .card p{font-size:1.28cqw;line-height:1.5;color:var(--ink-2);margin:0}
+  .card ul{margin:.6cqw 0 0;padding-left:1.5cqw;font-size:1.24cqw;line-height:1.5;color:var(--ink-2)}
+  .card li{margin-bottom:.42cqw}
+  .card .lab{
+    font-family:var(--mono);
+    font-size:.98cqw;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--deny);
+    display:block;
+    margin-bottom:.55cqw;
+  }
+  .card--goal .lab{color:var(--allow)}
+  .card--ask .lab{color:var(--fabric)}
+
+  .goalband{
+    margin-top:1.6cqw;
+    border:1px solid var(--allow);
+    background:var(--allow-soft);
+    padding:1.5cqw 1.8cqw;
+  }
+  .goalband p{margin:0;font-size:1.42cqw;line-height:1.45;color:var(--ink)}
+  .goalband .lab{
+    font-family:var(--mono);font-size:.98cqw;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--allow);display:block;margin-bottom:.5cqw;
+  }
+
+  /* svg shared */
+  .d-node{fill:var(--surface-2);stroke:var(--rule-strong);stroke-width:1.6}
+  .d-node--f{fill:var(--surface);stroke:var(--fabric);stroke-width:2.4}
+  .d-node--ot{fill:var(--ot-soft);stroke:var(--ot);stroke-width:1.8}
+  .d-node--deny{fill:var(--deny-soft);stroke:var(--deny);stroke-width:1.8}
+  .d-node--allow{fill:var(--allow-soft);stroke:var(--allow);stroke-width:1.8}
+  .d-ghost{fill:none;stroke:var(--dark-asset);stroke-width:1.6;stroke-dasharray:6 5}
+  .d-zone{fill:none;stroke:var(--rule-strong);stroke-width:1.4;stroke-dasharray:5 5}
+  .d-hd{font-family:var(--display);font-size:19px;font-weight:600;fill:var(--ink)}
+  .d-hd--f{fill:var(--fabric)}
+  .d-t{font-family:var(--mono);font-size:15px;fill:var(--ink-2)}
+  .d-s{font-family:var(--mono);font-size:13px;fill:var(--ink-3)}
+  .d-lbl{font-family:var(--mono);font-size:13px;letter-spacing:.1em;fill:var(--ink-3)}
+  .d-line{stroke:var(--rule-strong);stroke-width:2.2;fill:none}
+  .d-link{stroke:var(--fabric);stroke-width:3;fill:none}
+  .d-warn{stroke:var(--deny);stroke-width:2.6;fill:none}
+  .d-ok{stroke:var(--allow);stroke-width:2.6;fill:none}
+  .d-denytx{font-family:var(--mono);font-size:14px;fill:var(--deny)}
+  .d-oktx{font-family:var(--mono);font-size:14px;fill:var(--allow)}
+
+  /* nav */
+  .nav{
+    position:fixed;left:0;right:0;bottom:0;
+    display:flex;align-items:center;justify-content:center;gap:16px;
+    padding:12px;
+    background:var(--ground);
+    border-top:1px solid var(--rule);
+    font-family:var(--mono);font-size:12px;letter-spacing:.08em;
+    color:var(--ink-3);
+    z-index:20;
+  }
+  .nav button{
+    font-family:var(--mono);font-size:12px;letter-spacing:.08em;
+    background:var(--surface);color:var(--ink);
+    border:1px solid var(--rule-strong);
+    padding:6px 14px;cursor:pointer;
+  }
+  .nav button:hover{border-color:var(--fabric);color:var(--fabric)}
+  .dots{display:flex;gap:7px}
+  .dots span{
+    width:9px;height:9px;border:1px solid var(--rule-strong);
+    display:block;cursor:pointer;
+  }
+  .dots span.on{background:var(--fabric);border-color:var(--fabric)}
+  .hint{opacity:.75}
+
+  /* deck mode only once JS is present */
+  body:not(.js) .nav{display:none}
+  body.js .slide{display:none}
+  body.js .slide.live{display:grid}
+
+  :focus-visible{outline:2px solid var(--fabric);outline-offset:3px}
+
+  @media print{
+    body{padding:0;background:#fff}
+    .nav{display:none}
+    body.js .slide{display:grid !important;break-after:page;border:0;width:100%;max-width:none}
+    .deck{gap:0}
+  }
+</style>
+
+<div class="deck" id="deck">
+
+  <!-- ================= 1 ================= -->
+  <section class="slide live" aria-label="Slide 1">
+    <header>
+      <p class="s-eyebrow">DG Network · current state</p>
+      <h2>How site equipment is reached today</h2>
+      <p class="s-lede">Two different paths to the same equipment. One is authenticated at the perimeter; the other has no perimeter at all.</p>
+    </header>
+    <div class="s-body">
+      <svg viewBox="0 0 1000 400" role="img" aria-label="Remote users reach site equipment through the GlobalProtect VPN and the firewall. In-office users reach the same equipment directly with no VPN.">
+        <defs>
+          <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--rule-strong)"/>
+          </marker>
+          <marker id="a1d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--deny)"/>
+          </marker>
+        </defs>
+
+        <rect class="d-node" x="20" y="36" width="212" height="96" rx="4"/>
+        <text class="d-hd" x="40" y="72">Remote employee</text>
+        <text class="d-s" x="40" y="97">home, truck, hotel</text>
+        <text class="d-s" x="40" y="117">off the corporate network</text>
+
+        <rect class="d-node--f" x="308" y="36" width="256" height="96" rx="4"/>
+        <text class="d-hd d-hd--f" x="328" y="72">GlobalProtect VPN</text>
+        <text class="d-s" x="328" y="97">Palo Alto authentication</text>
+        <text class="d-s" x="328" y="117">the only gate that exists</text>
+
+        <path class="d-line" d="M232,84 L302,84" marker-end="url(#a1)"/>
+        <path class="d-line" d="M564,84 L700,84 L700,150" marker-end="url(#a1)"/>
+
+        <rect class="d-node" x="20" y="252" width="212" height="96" rx="4"/>
+        <text class="d-hd" x="40" y="288">In-office employee</text>
+        <text class="d-s" x="40" y="313">on the corporate LAN</text>
+        <text class="d-s" x="40" y="333">no VPN required</text>
+
+        <path class="d-warn" d="M232,300 L700,300 L700,262" marker-end="url(#a1d)" stroke-dasharray="9 5"/>
+        <text class="d-denytx" x="330" y="288">no VPN · no gate · straight through</text>
+
+        <rect class="d-node--ot" x="700" y="150" width="284" height="112" rx="4"/>
+        <text class="d-hd" x="722" y="186">Site equipment</text>
+        <text class="d-t" x="722" y="211">inverters · dataloggers</text>
+        <text class="d-t" x="722" y="232">HMIs · MET stations</text>
+        <text class="d-s" x="722" y="252">reached over port forwards</text>
+
+        <rect class="d-node--deny" x="700" y="286" width="284" height="62" rx="4"/>
+        <text class="d-denytx" x="722" y="311" style="font-size:15px">Only control at the device:</text>
+        <text class="d-denytx" x="722" y="333" style="font-size:15px">a username and a password</text>
+      </svg>
+    </div>
+    <span class="s-tag">Current state</span>
+    <span class="s-num">01 / 08</span>
+  </section>
+
+  <!-- ================= 2 ================= -->
+  <section class="slide" aria-label="Slide 2">
+    <header>
+      <p class="s-eyebrow">DG Network · the problem</p>
+      <h2>What that costs us</h2>
+      <p class="s-lede">The gap isn't one missing control. It's that access and the equipment itself are both defended by the same single thin layer.</p>
+    </header>
+    <div class="s-body">
+      <div class="cards">
+        <div class="card">
+          <span class="lab">Access</span>
+          <h3>No real control over who reaches site equipment</h3>
+          <p>Being on the corporate network is treated as authorization. There is no per-user, per-device decision anywhere in the path.</p>
+        </div>
+        <div class="card">
+          <span class="lab">Equipment</span>
+          <h3>No security portfolio at the sites</h3>
+          <p>Site devices carry no protection of their own beyond a local login. Nothing inspects, segments, or monitors what happens once traffic arrives.</p>
+        </div>
+        <div class="card">
+          <span class="lab">Perimeter</span>
+          <h3>Port forwards and a general access list</h3>
+          <p>Traffic to and from the sites is permitted broadly rather than explicitly. The rule set describes convenience, not intent.</p>
+        </div>
+      </div>
+      <div class="goalband">
+        <span class="lab">Where we are going</span>
+        <p>A secure infrastructure across the Grid — a DG Network solution paired with OT monitoring that detects and protects against cybersecurity threats, while keeping the organization simplified and secure.</p>
+      </div>
+    </div>
+    <span class="s-tag">The problem</span>
+    <span class="s-num">02 / 08</span>
+  </section>
+
+  <!-- ================= 3 ================= -->
+  <section class="slide" aria-label="Slide 3">
+    <header>
+      <p class="s-eyebrow">Base topology · option 0</p>
+      <h2>The base as it stands</h2>
+      <p class="s-lede">Redundant firewalls and switches with a jumphost, carrying three WAN relationships: the corporate network, NetCloud Manager, and the outlying sites.</p>
+    </header>
+    <div class="s-body">
+      <svg viewBox="0 0 1000 430" role="img" aria-label="Base topology: three WAN connections into a redundant firewall pair, a redundant switch pair, and a jumphost.">
+        <defs>
+          <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--rule-strong)"/>
+          </marker>
+        </defs>
+
+        <rect class="d-node" x="30" y="14" width="250" height="62" rx="4"/>
+        <text class="d-hd" x="50" y="42">Corporate network</text>
+        <text class="d-s" x="50" y="63">users and business systems</text>
+
+        <rect class="d-node" x="375" y="14" width="250" height="62" rx="4"/>
+        <text class="d-hd" x="395" y="42">NetCloud Manager</text>
+        <text class="d-s" x="395" y="63">cloud · manages the modems</text>
+
+        <rect class="d-node--ot" x="720" y="14" width="250" height="62" rx="4"/>
+        <text class="d-hd" x="740" y="42">Outlying site</text>
+        <text class="d-s" x="740" y="63">Cradlepoint modem over WAN</text>
+
+        <path class="d-line" d="M155,76 L155,124 L330,124" marker-end="url(#a3)"/>
+        <path class="d-line" d="M500,76 L500,124" marker-end="url(#a3)"/>
+        <path class="d-line" d="M845,76 L845,124 L670,124" marker-end="url(#a3)"/>
+        <text class="d-lbl" x="30" y="112">WAN</text>
+
+        <rect class="d-node--f" x="330" y="124" width="160" height="72" rx="4"/>
+        <text class="d-hd" x="350" y="153">Firewall A</text>
+        <text class="d-s" x="350" y="176">active</text>
+        <rect class="d-node--f" x="510" y="124" width="160" height="72" rx="4"/>
+        <text class="d-hd" x="530" y="153">Firewall B</text>
+        <text class="d-s" x="530" y="176">standby</text>
+        <path class="d-line" d="M490,160 L510,160"/>
+        <text class="d-s" x="470" y="212">HA pair</text>
+
+        <rect class="d-node" x="330" y="242" width="160" height="72" rx="4"/>
+        <text class="d-hd" x="350" y="271">Switch A</text>
+        <text class="d-s" x="350" y="294">core</text>
+        <rect class="d-node" x="510" y="242" width="160" height="72" rx="4"/>
+        <text class="d-hd" x="530" y="271">Switch B</text>
+        <text class="d-s" x="530" y="294">core</text>
+        <path class="d-line" d="M490,278 L510,278"/>
+
+        <path class="d-line" d="M400,196 L400,242"/>
+        <path class="d-line" d="M600,196 L600,242"/>
+        <path class="d-line" d="M440,196 L560,242"/>
+        <path class="d-line" d="M560,196 L440,242"/>
+
+        <rect class="d-node" x="400" y="356" width="200" height="62" rx="4"/>
+        <text class="d-hd" x="420" y="384">Jumphost</text>
+        <text class="d-s" x="420" y="405">operator entry point</text>
+        <path class="d-line" d="M440,314 L470,356"/>
+        <path class="d-line" d="M560,314 L530,356"/>
+
+        <rect class="d-ghost" x="720" y="242" width="250" height="110" rx="4"/>
+        <text class="d-s" x="742" y="286">No gateway in the path today —</text>
+        <text class="d-s" x="742" y="308">site traffic is permitted by</text>
+        <text class="d-s" x="742" y="330">port forwards and an access list.</text>
+      </svg>
+    </div>
+    <span class="s-tag">Base · today</span>
+    <span class="s-num">03 / 08</span>
+  </section>
+
+  <!-- ================= 4 ================= -->
+  <section class="slide" aria-label="Slide 4">
+    <header>
+      <p class="s-eyebrow">Base topology · option A</p>
+      <h2>With the Service Gateway on premises</h2>
+      <p class="s-lede">Same base. One addition: the NCX Service Gateway as physical hardware in our rack, where every site tunnel terminates and every policy decision is made.</p>
+    </header>
+    <div class="s-body">
+      <svg viewBox="0 0 1000 430" role="img" aria-label="Base topology with the NCX Service Gateway added as a physical appliance connected to the core switches.">
+        <defs>
+          <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--rule-strong)"/>
+          </marker>
+          <marker id="a4f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--fabric)"/>
+          </marker>
+        </defs>
+
+        <rect class="d-node" x="30" y="14" width="250" height="62" rx="4"/>
+        <text class="d-hd" x="50" y="42">Corporate network</text>
+        <text class="d-s" x="50" y="63">users and business systems</text>
+
+        <rect class="d-node" x="375" y="14" width="250" height="62" rx="4"/>
+        <text class="d-hd" x="395" y="42">NetCloud Manager</text>
+        <text class="d-s" x="395" y="63">cloud · policy and config only</text>
+
+        <rect class="d-node--ot" x="720" y="14" width="250" height="62" rx="4"/>
+        <text class="d-hd" x="740" y="42">Outlying site</text>
+        <text class="d-s" x="740" y="63">modem dials out to the gateway</text>
+
+        <path class="d-line" d="M155,76 L155,124 L330,124" marker-end="url(#a4)"/>
+        <path class="d-line" d="M500,76 L500,124" marker-end="url(#a4)" stroke-dasharray="6 5"/>
+        <path class="d-link" d="M845,76 L845,124 L670,124" marker-end="url(#a4f)"/>
+        <text class="d-s" x="700" y="106">encrypted tunnel</text>
+
+        <rect class="d-node--f" x="330" y="124" width="160" height="72" rx="4"/>
+        <text class="d-hd" x="350" y="153">Firewall A</text>
+        <text class="d-s" x="350" y="176">active</text>
+        <rect class="d-node--f" x="510" y="124" width="160" height="72" rx="4"/>
+        <text class="d-hd" x="530" y="153">Firewall B</text>
+        <text class="d-s" x="530" y="176">standby</text>
+        <path class="d-line" d="M490,160 L510,160"/>
+
+        <rect class="d-node" x="330" y="242" width="160" height="72" rx="4"/>
+        <text class="d-hd" x="350" y="271">Switch A</text>
+        <text class="d-s" x="350" y="294">core</text>
+        <rect class="d-node" x="510" y="242" width="160" height="72" rx="4"/>
+        <text class="d-hd" x="530" y="271">Switch B</text>
+        <text class="d-s" x="530" y="294">core</text>
+        <path class="d-line" d="M490,278 L510,278"/>
+
+        <path class="d-line" d="M400,196 L400,242"/>
+        <path class="d-line" d="M600,196 L600,242"/>
+        <path class="d-line" d="M440,196 L560,242"/>
+        <path class="d-line" d="M560,196 L440,242"/>
+
+        <rect class="d-node" x="330" y="356" width="200" height="62" rx="4"/>
+        <text class="d-hd" x="350" y="384">Jumphost</text>
+        <text class="d-s" x="350" y="405">operator entry point</text>
+        <path class="d-line" d="M400,314 L400,356"/>
+
+        <rect class="d-node--f" x="640" y="330" width="330" height="88" rx="4"/>
+        <text class="d-hd d-hd--f" x="662" y="360">NCX Service Gateway · SG4000</text>
+        <text class="d-t" x="662" y="384">1RU appliance in our rack</text>
+        <text class="d-s" x="662" y="406">terminates every site tunnel · enforces policy</text>
+        <path class="d-link" d="M630,278 L805,278 L805,330" marker-end="url(#a4f)"/>
+        <text class="d-s" x="820" y="272">data plane stays in our building</text>
+      </svg>
+    </div>
+    <span class="s-tag">Option A · on premises</span>
+    <span class="s-num">04 / 08</span>
+  </section>
+
+  <!-- ================= 5 ================= -->
+  <section class="slide" aria-label="Slide 5">
+    <header>
+      <p class="s-eyebrow">Base topology · option B</p>
+      <h2>With the Service Gateway as SaaS</h2>
+      <p class="s-lede">Same base again. The gateway moves up next to NetCloud Manager — nothing new in the rack, and site tunnels terminate in the cloud instead.</p>
+    </header>
+    <div class="s-body">
+      <svg viewBox="0 0 1000 430" role="img" aria-label="Base topology with the NCX Service Gateway delivered as SaaS alongside NetCloud Manager, with site tunnels terminating in the cloud.">
+        <defs>
+          <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--rule-strong)"/>
+          </marker>
+          <marker id="a5f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--fabric)"/>
+          </marker>
+        </defs>
+
+        <rect class="d-node" x="30" y="14" width="230" height="62" rx="4"/>
+        <text class="d-hd" x="50" y="42">Corporate network</text>
+        <text class="d-s" x="50" y="63">users and business systems</text>
+
+        <rect class="d-node--f" x="330" y="6" width="380" height="94" rx="4"/>
+        <text class="d-hd d-hd--f" x="352" y="36">NetCloud Manager + NCX Service Gateway</text>
+        <text class="d-t" x="352" y="60">cloud-delivered · Ericsson operates both</text>
+        <text class="d-s" x="352" y="84">tunnels terminate here · clientless vendor access included</text>
+
+        <rect class="d-node--ot" x="760" y="14" width="210" height="62" rx="4"/>
+        <text class="d-hd" x="780" y="42">Outlying site</text>
+        <text class="d-s" x="780" y="63">modem dials the cloud</text>
+
+        <path class="d-link" d="M760,50 L716,50" marker-end="url(#a5f)"/>
+        <path class="d-link" d="M470,100 L470,124" marker-end="url(#a5f)"/>
+        <text class="d-s" x="486" y="118">policy + return traffic</text>
+        <path class="d-line" d="M145,76 L145,124 L330,124" marker-end="url(#a5)"/>
+
+        <rect class="d-node--f" x="330" y="124" width="160" height="72" rx="4"/>
+        <text class="d-hd" x="350" y="153">Firewall A</text>
+        <text class="d-s" x="350" y="176">active</text>
+        <rect class="d-node--f" x="510" y="124" width="160" height="72" rx="4"/>
+        <text class="d-hd" x="530" y="153">Firewall B</text>
+        <text class="d-s" x="530" y="176">standby</text>
+        <path class="d-line" d="M490,160 L510,160"/>
+
+        <rect class="d-node" x="330" y="242" width="160" height="72" rx="4"/>
+        <text class="d-hd" x="350" y="271">Switch A</text>
+        <text class="d-s" x="350" y="294">core</text>
+        <rect class="d-node" x="510" y="242" width="160" height="72" rx="4"/>
+        <text class="d-hd" x="530" y="271">Switch B</text>
+        <text class="d-s" x="530" y="294">core</text>
+        <path class="d-line" d="M490,278 L510,278"/>
+
+        <path class="d-line" d="M400,196 L400,242"/>
+        <path class="d-line" d="M600,196 L600,242"/>
+        <path class="d-line" d="M440,196 L560,242"/>
+        <path class="d-line" d="M560,196 L440,242"/>
+
+        <rect class="d-node" x="330" y="356" width="200" height="62" rx="4"/>
+        <text class="d-hd" x="350" y="384">Jumphost</text>
+        <text class="d-s" x="350" y="405">operator entry point</text>
+        <path class="d-line" d="M400,314 L400,356"/>
+
+        <rect class="d-ghost" x="640" y="330" width="330" height="88" rx="4"/>
+        <text class="d-s" x="662" y="362">No gateway hardware required.</text>
+        <text class="d-s" x="662" y="384">Nothing here to size, patch, or</text>
+        <text class="d-s" x="662" y="406">build redundancy for.</text>
+      </svg>
+    </div>
+    <span class="s-tag">Option B · SaaS</span>
+    <span class="s-num">05 / 08</span>
+  </section>
+
+  <!-- ================= 6 ================= -->
+  <section class="slide" aria-label="Slide 6">
+    <header>
+      <p class="s-eyebrow">Site topology · protection at the boundary</p>
+      <h2>Site-to-site protection</h2>
+      <p class="s-lede">The modem enforces policy toward the core, so the site is defended from the network. Inside the site, an unmanaged switch lets every device talk to every other device.</p>
+    </header>
+    <div class="s-body">
+      <svg viewBox="0 0 1000 420" role="img" aria-label="Site topology with a Cradlepoint modem enforcing policy at the boundary, an unmanaged switch, and four device types that can all communicate freely with each other.">
+        <defs>
+          <marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--rule-strong)"/>
+          </marker>
+          <marker id="a6d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--deny)"/>
+          </marker>
+        </defs>
+
+        <rect class="d-node--f" x="330" y="10" width="340" height="76" rx="4"/>
+        <text class="d-hd d-hd--f" x="352" y="40">Cradlepoint modem</text>
+        <text class="d-t" x="352" y="64">security policy enforced here</text>
+
+        <path class="d-ok" d="M500,86 L500,124"/>
+        <rect class="d-node--allow" x="150" y="96" width="170" height="30" rx="3"/>
+        <text class="d-oktx" x="235" y="116" text-anchor="middle">PROTECTED · site ↔ core</text>
+
+        <rect class="d-node" x="330" y="124" width="340" height="66" rx="4"/>
+        <text class="d-hd" x="352" y="151">Switch · no VLANs configured</text>
+        <text class="d-s" x="352" y="175">one flat broadcast domain</text>
+
+        <path class="d-line" d="M420,190 L150,244" marker-end="url(#a6)"/>
+        <path class="d-line" d="M470,190 L390,244" marker-end="url(#a6)"/>
+        <path class="d-line" d="M530,190 L610,244" marker-end="url(#a6)"/>
+        <path class="d-line" d="M580,190 L850,244" marker-end="url(#a6)"/>
+
+        <rect class="d-node--ot" x="60" y="244" width="180" height="80" rx="4"/>
+        <text class="d-hd" x="80" y="274">Inverters</text>
+        <text class="d-s" x="80" y="298">generation</text>
+
+        <rect class="d-node--ot" x="300" y="244" width="180" height="80" rx="4"/>
+        <text class="d-hd" x="320" y="274">Dataloggers</text>
+        <text class="d-s" x="320" y="298">collection</text>
+
+        <rect class="d-node--ot" x="520" y="244" width="180" height="80" rx="4"/>
+        <text class="d-hd" x="540" y="274">HMIs</text>
+        <text class="d-s" x="540" y="298">operator screens</text>
+
+        <rect class="d-node--ot" x="760" y="244" width="180" height="80" rx="4"/>
+        <text class="d-hd" x="780" y="274">MET stations</text>
+        <text class="d-s" x="780" y="298">weather telemetry</text>
+
+        <path class="d-warn" d="M240,360 L940,360" marker-start="url(#a6d)" marker-end="url(#a6d)" stroke-dasharray="8 5"/>
+        <path class="d-warn" d="M150,324 L150,360 M390,324 L390,360 M610,324 L610,360 M850,324 L850,360" stroke-dasharray="4 4"/>
+        <text class="d-denytx" x="500" y="394" text-anchor="middle">UNPROTECTED · every device can reach every other device · one compromise reaches all four</text>
+      </svg>
+    </div>
+    <span class="s-tag">Site · flat</span>
+    <span class="s-num">06 / 08</span>
+  </section>
+
+  <!-- ================= 7 ================= -->
+  <section class="slide" aria-label="Slide 7">
+    <header>
+      <p class="s-eyebrow">Site topology · protection inside</p>
+      <h2>Network segmentation</h2>
+      <p class="s-lede">A managed switch groups devices into VLANs by function. The boundary protection stays exactly the same — what changes is that a compromise now stops at the group edge.</p>
+    </header>
+    <div class="s-body">
+      <svg viewBox="0 0 1000 420" role="img" aria-label="Site topology with a managed switch splitting devices into three VLANs, so lateral movement between groups is blocked.">
+        <defs>
+          <marker id="a7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--rule-strong)"/>
+          </marker>
+        </defs>
+
+        <rect class="d-node--f" x="330" y="10" width="340" height="76" rx="4"/>
+        <text class="d-hd d-hd--f" x="352" y="40">Cradlepoint modem</text>
+        <text class="d-t" x="352" y="64">security policy enforced here</text>
+
+        <path class="d-ok" d="M500,86 L500,124"/>
+        <rect class="d-node--allow" x="150" y="96" width="170" height="30" rx="3"/>
+        <text class="d-oktx" x="235" y="116" text-anchor="middle">PROTECTED · site ↔ core</text>
+
+        <rect class="d-node--allow" x="330" y="124" width="340" height="66" rx="4"/>
+        <text class="d-hd" x="352" y="151">Managed switch · VLANs configured</text>
+        <text class="d-s" x="352" y="175">three isolated groups, routed only by policy</text>
+
+        <path class="d-line" d="M420,190 L200,236" marker-end="url(#a7)"/>
+        <path class="d-line" d="M500,190 L500,236" marker-end="url(#a7)"/>
+        <path class="d-line" d="M580,190 L800,236" marker-end="url(#a7)"/>
+
+        <rect class="d-zone" x="40" y="236" width="320" height="150" rx="4"/>
+        <text class="d-lbl" x="60" y="260">VLAN 10 · GENERATION</text>
+        <rect class="d-node--ot" x="60" y="274" width="280" height="92" rx="4"/>
+        <text class="d-hd" x="82" y="306">Inverters</text>
+        <text class="d-s" x="82" y="330">talk to the datalogger only,</text>
+        <text class="d-s" x="82" y="350">through a written rule</text>
+
+        <rect class="d-zone" x="380" y="236" width="240" height="150" rx="4"/>
+        <text class="d-lbl" x="400" y="260">VLAN 20 · MONITORING</text>
+        <rect class="d-node--ot" x="400" y="274" width="200" height="92" rx="4"/>
+        <text class="d-hd" x="422" y="306">Dataloggers</text>
+        <text class="d-hd" x="422" y="332">MET stations</text>
+        <text class="d-s" x="422" y="354">telemetry only</text>
+
+        <rect class="d-zone" x="640" y="236" width="320" height="150" rx="4"/>
+        <text class="d-lbl" x="660" y="260">VLAN 30 · OPERATOR</text>
+        <rect class="d-node--ot" x="660" y="274" width="280" height="92" rx="4"/>
+        <text class="d-hd" x="682" y="306">HMIs</text>
+        <text class="d-s" x="682" y="330">reachable by named staff,</text>
+        <text class="d-s" x="682" y="350">not by other site devices</text>
+
+        <path class="d-warn" d="M366,310 L374,310 M370,296 L370,324" />
+        <path class="d-warn" d="M626,310 L634,310 M630,296 L630,324" />
+        <text class="d-denytx" x="500" y="410" text-anchor="middle">Lateral movement between groups is blocked — a compromised inverter cannot reach an HMI</text>
+      </svg>
+    </div>
+    <span class="s-tag">Site · segmented</span>
+    <span class="s-num">07 / 08</span>
+  </section>
+
+  <!-- ================= 8 ================= -->
+  <section class="slide" aria-label="Slide 8">
+    <header>
+      <p class="s-eyebrow">What we need to decide</p>
+      <h2>Decisions and asks</h2>
+      <p class="s-lede">Two decisions unlock the design. Neither is technically difficult; both need an owner and a budget line.</p>
+    </header>
+    <div class="s-body">
+      <div class="cards cards--2">
+        <div class="card card--ask">
+          <span class="lab">Decision 1 · gateway</span>
+          <h3>On premises or SaaS</h3>
+          <p>Both deliver the same security model. The difference is what we operate and what we can support later.</p>
+          <ul>
+            <li><b>On premises</b> — data plane stays in our building, FIPS available, keeps the door open for a future CIP Medium site. We size, patch and make it redundant.</li>
+            <li><b>SaaS</b> — nothing in the rack, clientless vendor access included, redundancy is the vendor's problem. Fits non-CIP and CIP Low sites.</li>
+          </ul>
+        </div>
+        <div class="card card--ask">
+          <span class="lab">Decision 2 · site switches</span>
+          <h3>Access to existing switches, or replace them</h3>
+          <p>Segmentation on slide 7 requires a managed switch we can configure. Today we have neither the access nor, at some sites, the capability.</p>
+          <ul>
+            <li><b>Gain access</b> — cheapest path where the installed switch is already managed. Needs credentials, an owner, and a config standard.</li>
+            <li><b>Replace</b> — required where switches are unmanaged. Capital cost per site, but it is the only way to get VLANs at those locations.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="goalband">
+        <span class="lab">What this buys us</span>
+        <p>Boundary protection from the modem, internal segmentation from the switch, and an OT monitoring feed with something meaningful to watch — the layered posture the Grid does not have today.</p>
+      </div>
+    </div>
+    <span class="s-tag">Asks</span>
+    <span class="s-num">08 / 08</span>
+  </section>
+
+</div>
+
+<nav class="nav" aria-label="Slide navigation">
+  <button type="button" id="prev" aria-label="Previous slide">◀ Prev</button>
+  <div class="dots" id="dots"></div>
+  <button type="button" id="next" aria-label="Next slide">Next ▶</button>
+  <span class="hint">← → or click · P to print</span>
+</nav>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  if(!slides.length) return;
+  document.body.classList.add('js');
+  var i = 0;
+  var dots = document.getElementById('dots');
+
+  slides.forEach(function(s, n){
+    var d = document.createElement('span');
+    d.setAttribute('role','button');
+    d.setAttribute('tabindex','0');
+    d.setAttribute('aria-label','Go to slide ' + (n+1));
+    d.addEventListener('click', function(){ go(n); });
+    d.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(n); }
+    });
+    dots.appendChild(d);
+  });
+
+  function go(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function(s, k){ s.classList.toggle('live', k === i); });
+    Array.prototype.forEach.call(dots.children, function(d, k){
+      d.classList.toggle('on', k === i);
+    });
+    window.scrollTo(0, 0);
+  }
+
+  document.getElementById('prev').addEventListener('click', function(){ go(i - 1); });
+  document.getElementById('next').addEventListener('click', function(){ go(i + 1); });
+
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' || e.key === 'PageDown'){ e.preventDefault(); go(i + 1); }
+    else if(e.key === 'ArrowLeft' || e.key === 'PageUp'){ e.preventDefault(); go(i - 1); }
+    else if(e.key === 'Home'){ e.preventDefault(); go(0); }
+    else if(e.key === 'End'){ e.preventDefault(); go(slides.length - 1); }
+    else if(e.key === 'p' || e.key === 'P'){ window.print(); }
+  });
+
+  go(0);
+})();
+</script>
